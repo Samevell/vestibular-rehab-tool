@@ -1,0 +1,50 @@
+* {
+    font-family: "Segoe UI";
+    color: #2C3E50;
+}
+
+QMainWindow {
+    background-color: #f9fcfe;
+}
+
+QPushButton {
+    background: #ffffff;
+    border: none;
+    color: #202223;           /* базовый серый */
+    padding: 8px 16px;
+    border: 1px solid #cccccc;
+    border-radius: 8px;   
+}
+
+#btn_start_ex {
+    background: #1dbeb7;
+    border: none;
+    color: white;
+}
+
+
+QScrollArea {
+    border: none;
+}
+
+/* Прозрачный фон для QScrollArea и его внутренних компонентов */
+QScrollArea,
+QScrollArea QWidget,
+QScrollArea QFrame,
+QScrollArea QVBoxLayout,
+QScrollArea QHBoxLayout {
+    background: transparent;
+    background-color: transparent;
+    border: none;
+}
+
+/* Специально для viewport (область прокрутки) */
+QScrollArea::viewport {
+    background: transparent;
+}
+
+/* Для контента внутри скролла */
+#ex_scroll_content,
+.ex_scroll_content {
+    background: transparent;
+}
