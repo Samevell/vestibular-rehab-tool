@@ -118,3 +118,55 @@
 #stacked_widget_ex_choose QLabel[wordWrap="true"] {
     color: #64748B;
 }
+
+/* Панель действий с назначением врача */
+#frame_prescription_actions {
+    background-color: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+}
+
+#label_prescription_actions {
+    color: #64748B;
+    background: transparent;
+    font-weight: 600;
+}
+
+#btn_save_baseline,
+#btn_restore_baseline,
+#btn_apply_recommendation {
+    font-size: 15px;
+    padding: 10px 14px;
+    border-radius: 8px;
+}
+
+#btn_save_baseline {
+    background-color: #FFFFFF;
+    border: 1px solid #00A9A5;
+    color: #2C3E50;
+}
+
+#btn_save_baseline:hover {
+    background-color: #F0F9F9;
+}
+
+#btn_apply_recommendation {
+    background-color: #F0F9F9;
+    border: 1px solid #00A9A5;
+    color: #00A9A5;
+    font-weight: 600;
+}
+
+#btn_apply_recommendation:hover {
+    background-color: #E0F5F4;
+}
+
+#btn_restore_baseline {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    color: #2C3E50;
+}
+
+#btn_restore_baseline:hover {
+    background-color: #F8FAFC;
+}

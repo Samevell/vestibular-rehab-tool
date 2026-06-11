@@ -5,7 +5,31 @@ from mysql.connector import Error
 import threading
 import traceback
 
-from workspace import WorkspaceProfile
+from db_config import mysql_connect_kwargs
+
+EXERCISE_TABLES = {
+    1: "exercise_1_results",
+    2: "exercise_2_results",
+    3: "exercise_3_results",
+    4: "exercise_4_results",
+    5: "exercise_5_results",
+    6: "exercise_6_results",
+    7: "exercise_7_results",
+    8: "exercise_8_results",
+    9: "exercise_9_results",
+}
+
+EXERCISE_HISTORY_QUERIES = [
+    ("exercise_1_results", "e1", "Упражнение 1", "CONCAT(e1.seconds_per_apple, ' сек')"),
+    ("exercise_2_results", "e2", "Упражнение 2", "CONCAT(e2.seconds_per_apple, ' сек')"),
+    ("exercise_3_results", "e3", "Упражнение 3", "e3.speed"),
+    ("exercise_4_results", "e4", "Упражнение 4", "e4.param3"),
+    ("exercise_5_results", "e5", "Упражнение 5", "e5.param3"),
+    ("exercise_6_results", "e6", "Упражнение 6", "CONCAT(e6.time_sec, ' сек')"),
+    ("exercise_7_results", "e7", "Упражнение 7", "e7.param3"),
+    ("exercise_8_results", "e8", "Упражнение 8", "CONCAT(e8.speed, ' / ', e8.color_interval, 'с')"),
+    ("exercise_9_results", "e9", "Упражнение 9", "e9.param3"),
+]
 
 class DatabasePreconnected:
     """БД с предварительным подключением при инициализации"""
@@ -26,14 +50,10 @@ class DatabasePreconnected:
             print("🔄 Предварительное подключение к MySQL...")
             
             self.connection = mysql.connector.connect(
-                host="127.0.0.1",
-                port="3306",
-                database="trainer",
-                user="me",
-                password="pass",
+                **mysql_connect_kwargs(),
                 autocommit=True,
                 pool_size=1,
-                connect_timeout=5
+                connect_timeout=5,
             )
             
             if self.connection.is_connected():
@@ -70,34 +90,158 @@ class DatabasePreconnected:
             
             if len(tables) == 0:
                 print("⚠️ Таблицы не найдены, создание будет при первом запросе")
-            else:
-                self._ensure_exercise_1_columns()
+
+            self._ensure_doctor_baseline_table()
+            self._ensure_exercise_tables()
                 
         except Error as e:
             print(f"⚠️ Ошибка при проверке таблиц: {e}")
 
-    def _ensure_exercise_1_columns(self):
-        """Миграция: session_duration_sec, exit_reason в exercise_1_results."""
-        if not self.is_connected:
-            return
-        try:
+    def _ensure_doctor_baseline_table(self, cursor=None):
+        """Создаёт таблицу назначений врача, если её ещё нет."""
+        close_cursor = False
+        if cursor is None:
+            if not self._ensure_connection():
+                return False
             cursor = self.connection.cursor()
-            cursor.execute("SHOW COLUMNS FROM exercise_1_results LIKE 'session_duration_sec'")
-            if not cursor.fetchone():
-                cursor.execute(
-                    "ALTER TABLE exercise_1_results ADD COLUMN session_duration_sec INT NULL"
+            close_cursor = True
+        try:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS doctor_baseline (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    exercise_id INT NOT NULL,
+                    params_json TEXT NOT NULL,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY uk_user_exercise (user_id, exercise_id)
                 )
-                print("✅ Добавлен столбец session_duration_sec")
-            cursor.execute("SHOW COLUMNS FROM exercise_1_results LIKE 'exit_reason'")
-            if not cursor.fetchone():
-                cursor.execute(
-                    "ALTER TABLE exercise_1_results ADD COLUMN exit_reason VARCHAR(32) NULL"
-                )
-                print("✅ Добавлен столбец exit_reason")
-            self.connection.commit()
-            cursor.close()
+            """)
+            if close_cursor:
+                self.connection.commit()
+            return True
         except Error as e:
-            print(f"⚠️ Миграция exercise_1_results: {e}")
+            print(f"⚠️ Не удалось создать doctor_baseline: {e}")
+            return False
+        finally:
+            if close_cursor:
+                cursor.close()
+
+    def _ensure_exercise_tables(self, cursor=None):
+        """Создаёт таблицы результатов упражнений 4–9, если их ещё нет."""
+        close_cursor = False
+        if cursor is None:
+            if not self._ensure_connection():
+                return False
+            cursor = self.connection.cursor()
+            close_cursor = True
+        try:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS exercise_4_results (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT,
+                    apples_count INT NOT NULL,
+                    time_sec FLOAT NOT NULL,
+                    param3 VARCHAR(50),
+                    background VARCHAR(50),
+                    caught_apples INT NOT NULL,
+                    coefficient FLOAT NOT NULL,
+                    total_score FLOAT NOT NULL,
+                    exercise_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS exercise_5_results (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT,
+                    apples_count INT NOT NULL,
+                    time_sec FLOAT NOT NULL,
+                    param3 VARCHAR(50),
+                    background VARCHAR(50),
+                    caught_apples INT NOT NULL,
+                    coefficient FLOAT NOT NULL,
+                    total_score FLOAT NOT NULL,
+                    exercise_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS exercise_6_results (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT,
+                    apples_count INT NOT NULL,
+                    time_sec FLOAT NOT NULL,
+                    background VARCHAR(50),
+                    caught_apples INT NOT NULL,
+                    coefficient FLOAT NOT NULL,
+                    total_score FLOAT NOT NULL,
+                    exercise_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS exercise_7_results (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT,
+                    apples_count INT NOT NULL,
+                    time_sec FLOAT NOT NULL,
+                    param3 VARCHAR(50),
+                    background VARCHAR(50),
+                    caught_apples INT NOT NULL,
+                    coefficient FLOAT NOT NULL,
+                    total_score FLOAT NOT NULL,
+                    exercise_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS exercise_8_results (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT,
+                    apples_count INT NOT NULL,
+                    time_sec FLOAT NOT NULL,
+                    color_interval FLOAT NOT NULL,
+                    speed VARCHAR(50),
+                    background VARCHAR(50),
+                    caught_apples INT NOT NULL,
+                    coefficient FLOAT NOT NULL,
+                    total_score FLOAT NOT NULL,
+                    exercise_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS exercise_9_results (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT,
+                    apples_count INT NOT NULL,
+                    time_sec FLOAT NOT NULL,
+                    param3 VARCHAR(50),
+                    background VARCHAR(50),
+                    caught_apples INT NOT NULL,
+                    coefficient FLOAT NOT NULL,
+                    total_score FLOAT NOT NULL,
+                    exercise_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            if close_cursor:
+                self.connection.commit()
+            return True
+        except Error as e:
+            print(f"⚠️ Не удалось создать таблицы упражнений 4–9: {e}")
+            return False
+        finally:
+            if close_cursor:
+                cursor.close()
+
+    def _get_existing_table_names(self):
+        cursor = self.connection.cursor()
+        cursor.execute("SHOW TABLES")
+        names = {row[0] for row in cursor.fetchall()}
+        cursor.close()
+        return names
     
     def _ensure_connection(self):
         """Убедиться, что соединение активно"""
@@ -155,14 +299,9 @@ class DatabasePreconnected:
                 traceback.print_exc()
                 return None
     
-    def save_exercise_1(self, user_id, apples_count, seconds_per_apple, background, caught_apples,
-                        coefficient, total_score, session_duration_sec=None, exit_reason=None):
+    def save_exercise_1(self, user_id, apples_count, seconds_per_apple, background, caught_apples, coefficient, total_score):
         """Сохранение упражнения 1"""
-        return self._save_exercise(
-            "exercise_1_results", user_id, apples_count, seconds_per_apple, background,
-            caught_apples, coefficient, total_score,
-            session_duration_sec=session_duration_sec, exit_reason=exit_reason,
-        )
+        return self._save_exercise("exercise_1_results", user_id, apples_count, seconds_per_apple, background, caught_apples, coefficient, total_score)
     
     def save_exercise_2(self, user_id, apples_count, seconds_per_apple, background, caught_apples, coefficient, total_score):
         """Сохранение упражнения 2"""
@@ -196,9 +335,7 @@ class DatabasePreconnected:
         """Сохранение упражнения 9"""
         return self._save_exercise_4_5_7_9("exercise_9_results", user_id, apples_count, time_sec, neck_range, background, caught_apples, coefficient, total_score)
     
-    def _save_exercise(self, table_name, user_id, apples_count, param2, background, caught_apples,
-                       coefficient, total_score, is_exercise_3=False,
-                       session_duration_sec=None, exit_reason=None):
+    def _save_exercise(self, table_name, user_id, apples_count, param2, background, caught_apples, coefficient, total_score, is_exercise_3=False):
         """Общий метод сохранения упражнений"""
         print(f" Сохранение в {table_name} для пользователя {user_id}")
         
@@ -208,9 +345,6 @@ class DatabasePreconnected:
                 if not self._ensure_connection():
                     print(" Нет соединения с БД")
                     return False
-
-                if table_name == "exercise_1_results":
-                    self._ensure_exercise_1_columns()
                 
                 cursor = self.connection.cursor()
                 
@@ -221,18 +355,6 @@ class DatabasePreconnected:
                         (user_id, apples_count, speed, background, caught_apples, coefficient, total_score)
                         VALUES (%s, %s, %s, %s, %s, %s, %s)
                     """, (user_id, apples_count, param2, background, caught_apples, coefficient, total_score))
-                elif table_name == "exercise_1_results" and (
-                    session_duration_sec is not None or exit_reason is not None
-                ):
-                    cursor.execute(f"""
-                        INSERT INTO {table_name}
-                        (user_id, apples_count, seconds_per_apple, background, caught_apples,
-                         coefficient, total_score, session_duration_sec, exit_reason)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """, (
-                        user_id, apples_count, param2, background, caught_apples,
-                        coefficient, total_score, session_duration_sec, exit_reason,
-                    ))
                 else:
                     # Для упражнений 1 и 2
                     cursor.execute(f"""
@@ -362,37 +484,33 @@ class DatabasePreconnected:
                     print("❌ Нет соединения с БД")
                     return []
                 
+                existing_tables = self._get_existing_table_names()
+                query_parts = []
+                params = []
+                for table, alias, exercise_name, difficulty_expr in EXERCISE_HISTORY_QUERIES:
+                    if table not in existing_tables:
+                        continue
+                    query_parts.append(f"""
+                        SELECT '{exercise_name}' as exercise_type, {alias}.exercise_date,
+                               CONCAT(u.first_name, ' ', u.last_name) as user_name,
+                               {alias}.apples_count as total_apples, {alias}.caught_apples,
+                               {difficulty_expr} as difficulty, {alias}.background,
+                               {alias}.coefficient, {alias}.total_score
+                        FROM {table} {alias}
+                        JOIN users u ON {alias}.user_id = u.id
+                        WHERE {alias}.user_id = %s
+                    """)
+                    params.append(user_id)
+
+                if not query_parts:
+                    print("⚠️ Нет таблиц с результатами упражнений")
+                    return []
+
+                query = " UNION ALL ".join(query_parts) + " ORDER BY exercise_date DESC LIMIT %s"
+                params.append(limit)
+
                 cursor = self.connection.cursor(dictionary=True)
-                query = """
-                    SELECT 'Упражнение 1' as exercise_type, e1.exercise_date, CONCAT(u.first_name, ' ', u.last_name) as user_name, e1.apples_count as total_apples, e1.caught_apples, CONCAT(e1.seconds_per_apple, ' сек') as difficulty, e1.background, e1.coefficient, e1.total_score
-                    FROM exercise_1_results e1 JOIN users u ON e1.user_id = u.id WHERE e1.user_id = %s
-                    UNION ALL
-                    SELECT 'Упражнение 2' as exercise_type, e2.exercise_date, CONCAT(u.first_name, ' ', u.last_name) as user_name, e2.apples_count as total_apples, e2.caught_apples, CONCAT(e2.seconds_per_apple, ' сек') as difficulty, e2.background, e2.coefficient, e2.total_score
-                    FROM exercise_2_results e2 JOIN users u ON e2.user_id = u.id WHERE e2.user_id = %s
-                    UNION ALL
-                    SELECT 'Упражнение 3' as exercise_type, e3.exercise_date, CONCAT(u.first_name, ' ', u.last_name) as user_name, e3.apples_count as total_apples, e3.caught_apples, e3.speed as difficulty, e3.background, e3.coefficient, e3.total_score
-                    FROM exercise_3_results e3 JOIN users u ON e3.user_id = u.id WHERE e3.user_id = %s
-                    UNION ALL
-                    SELECT 'Упражнение 4' as exercise_type, e4.exercise_date, CONCAT(u.first_name, ' ', u.last_name) as user_name, e4.apples_count as total_apples, e4.caught_apples, e4.param3 as difficulty, e4.background, e4.coefficient, e4.total_score
-                    FROM exercise_4_results e4 JOIN users u ON e4.user_id = u.id WHERE e4.user_id = %s
-                    UNION ALL
-                    SELECT 'Упражнение 5' as exercise_type, e5.exercise_date, CONCAT(u.first_name, ' ', u.last_name) as user_name, e5.apples_count as total_apples, e5.caught_apples, e5.param3 as difficulty, e5.background, e5.coefficient, e5.total_score
-                    FROM exercise_5_results e5 JOIN users u ON e5.user_id = u.id WHERE e5.user_id = %s
-                    UNION ALL
-                    SELECT 'Упражнение 6' as exercise_type, e6.exercise_date, CONCAT(u.first_name, ' ', u.last_name) as user_name, e6.apples_count as total_apples, e6.caught_apples, CONCAT(e6.time_sec, ' сек') as difficulty, e6.background, e6.coefficient, e6.total_score
-                    FROM exercise_6_results e6 JOIN users u ON e6.user_id = u.id WHERE e6.user_id = %s
-                    UNION ALL
-                    SELECT 'Упражнение 7' as exercise_type, e7.exercise_date, CONCAT(u.first_name, ' ', u.last_name) as user_name, e7.apples_count as total_apples, e7.caught_apples, e7.param3 as difficulty, e7.background, e7.coefficient, e7.total_score
-                    FROM exercise_7_results e7 JOIN users u ON e7.user_id = u.id WHERE e7.user_id = %s
-                    UNION ALL
-                    SELECT 'Упражнение 8' as exercise_type, e8.exercise_date, CONCAT(u.first_name, ' ', u.last_name) as user_name, e8.apples_count as total_apples, e8.caught_apples, CONCAT(e8.speed, ' / ', e8.color_interval, 'с') as difficulty, e8.background, e8.coefficient, e8.total_score
-                    FROM exercise_8_results e8 JOIN users u ON e8.user_id = u.id WHERE e8.user_id = %s
-                    UNION ALL
-                    SELECT 'Упражнение 9' as exercise_type, e9.exercise_date, CONCAT(u.first_name, ' ', u.last_name) as user_name, e9.apples_count as total_apples, e9.caught_apples, e9.param3 as difficulty, e9.background, e9.coefficient, e9.total_score
-                    FROM exercise_9_results e9 JOIN users u ON e9.user_id = u.id WHERE e9.user_id = %s
-                    ORDER BY exercise_date DESC LIMIT %s
-                """
-                cursor.execute(query, (user_id, user_id, user_id, user_id, user_id, user_id, user_id, user_id, user_id, limit))
+                cursor.execute(query, tuple(params))
                 records = cursor.fetchall()
                 cursor.close()
                 print(f"✅ Получено записей: {len(records)}")
@@ -435,65 +553,91 @@ class DatabasePreconnected:
                 traceback.print_exc()
                 return []
     
-    def get_exercise_1_results_raw(self, user_id, limit=50):
-        """Сырые результаты упражнения 1 (новые первыми)."""
-        print(f"🔄 get_exercise_1_results_raw user_id={user_id} limit={limit}")
+    def get_exercise_sessions(self, user_id, exercise_id, limit=6):
+        """Последние сессии одного упражнения (хронологический порядок)."""
+        table = EXERCISE_TABLES.get(exercise_id)
+        if not table:
+            return []
+
         with self.lock:
             try:
                 if not self._ensure_connection():
                     return []
-                self._ensure_exercise_1_columns()
+
                 cursor = self.connection.cursor(dictionary=True)
-                try:
-                    cursor.execute("""
-                        SELECT id, apples_count, seconds_per_apple, background, caught_apples,
-                               exercise_date, coefficient, total_score,
-                               session_duration_sec, exit_reason
-                        FROM exercise_1_results
-                        WHERE user_id = %s
-                        ORDER BY exercise_date DESC
-                        LIMIT %s
-                    """, (user_id, limit))
-                except Error:
-                    cursor.execute("""
-                        SELECT id, apples_count, seconds_per_apple, background, caught_apples,
-                               exercise_date, coefficient, total_score
-                        FROM exercise_1_results
-                        WHERE user_id = %s
-                        ORDER BY exercise_date DESC
-                        LIMIT %s
-                    """, (user_id, limit))
+                cursor.execute(
+                    f"""
+                    SELECT apples_count, caught_apples, exercise_date,
+                           coefficient, total_score
+                    FROM {table}
+                    WHERE user_id = %s
+                    ORDER BY exercise_date DESC
+                    LIMIT %s
+                    """,
+                    (user_id, limit),
+                )
                 rows = cursor.fetchall()
                 cursor.close()
-                print(f"✅ exercise_1_results: {len(rows)} записей")
+                rows.reverse()
                 return rows
             except Error as e:
-                print(f"❌ get_exercise_1_results_raw: {e}")
+                print(f"❌ Ошибка get_exercise_sessions: {e}")
                 return []
 
-    def has_user_calibration(self, user_id):
-        """Есть ли сохранённая калибровка пользователя."""
-        if user_id is None:
-            return False
+    def save_doctor_baseline(self, user_id, exercise_id, params: dict):
+        """Сохранить назначение врача для упражнения."""
+        self._ensure_doctor_baseline_table()
+
         with self.lock:
             try:
                 if not self._ensure_connection():
                     return False
+
+                payload = json.dumps(params, ensure_ascii=False)
                 cursor = self.connection.cursor()
-                cursor.execute("SHOW TABLES LIKE 'user_calibration'")
-                if not cursor.fetchone():
-                    cursor.close()
-                    # Agent 1 ещё не создал таблицу — не блокируем рекомендации
-                    return True
                 cursor.execute(
-                    "SELECT 1 FROM user_calibration WHERE user_id = %s LIMIT 1",
-                    (user_id,),
+                    """
+                    INSERT INTO doctor_baseline (user_id, exercise_id, params_json)
+                    VALUES (%s, %s, %s)
+                    ON DUPLICATE KEY UPDATE
+                        params_json = VALUES(params_json),
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    (user_id, exercise_id, payload),
                 )
-                found = cursor.fetchone() is not None
+                self.connection.commit()
                 cursor.close()
-                return found
-            except Error:
+                return True
+            except Error as e:
+                print(f"❌ Ошибка save_doctor_baseline: {e}")
                 return False
+
+    def get_doctor_baseline(self, user_id, exercise_id):
+        """Получить назначение врача или None."""
+        self._ensure_doctor_baseline_table()
+
+        with self.lock:
+            try:
+                if not self._ensure_connection():
+                    return None
+
+                cursor = self.connection.cursor(dictionary=True)
+                cursor.execute(
+                    """
+                    SELECT params_json
+                    FROM doctor_baseline
+                    WHERE user_id = %s AND exercise_id = %s
+                    """,
+                    (user_id, exercise_id),
+                )
+                row = cursor.fetchone()
+                cursor.close()
+                if not row:
+                    return None
+                return json.loads(row["params_json"])
+            except Error as e:
+                print(f"❌ Ошибка get_doctor_baseline: {e}")
+                return None
 
     def delete_user(self, user_id):
         with self.lock:
@@ -502,7 +646,6 @@ class DatabasePreconnected:
                     return False
                 
                 cursor = self.connection.cursor()
-                cursor.execute("DELETE FROM user_calibration WHERE user_id = %s", (user_id,))
                 cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
                 self.connection.commit()
                 cursor.close()
@@ -510,120 +653,3 @@ class DatabasePreconnected:
             except Exception as e:
                 print(e)
                 return False
-
-    def _ensure_calibration_table(self):
-        """CREATE TABLE IF NOT EXISTS user_calibration (Agent 1)."""
-        if not self._ensure_connection():
-            return False
-        try:
-            cursor = self.connection.cursor()
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS user_calibration (
-                    user_id INT PRIMARY KEY,
-                    x_min INT NOT NULL,
-                    x_max INT NOT NULL,
-                    y_min INT NOT NULL,
-                    y_max INT NOT NULL,
-                    frame_w INT NOT NULL,
-                    frame_h INT NOT NULL,
-                    touch_points_json TEXT,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                        ON UPDATE CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                )
-            """)
-            cursor.close()
-            return True
-        except Error as e:
-            print(f"❌ Ошибка создания user_calibration: {e}")
-            return False
-
-    def save_user_calibration(self, user_id, profile, touch_points=None):
-        """Сохранение или обновление профиля рабочей зоны пользователя."""
-        if profile is None or user_id is None:
-            return False
-
-        with self.lock:
-            try:
-                if not self._ensure_calibration_table():
-                    return False
-
-                touch_json = None
-                if touch_points:
-                    touch_json = json.dumps([[int(x), int(y)] for x, y in touch_points])
-
-                cursor = self.connection.cursor()
-                cursor.execute("""
-                    INSERT INTO user_calibration
-                        (user_id, x_min, x_max, y_min, y_max, frame_w, frame_h, touch_points_json)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                    ON DUPLICATE KEY UPDATE
-                        x_min = VALUES(x_min),
-                        x_max = VALUES(x_max),
-                        y_min = VALUES(y_min),
-                        y_max = VALUES(y_max),
-                        frame_w = VALUES(frame_w),
-                        frame_h = VALUES(frame_h),
-                        touch_points_json = VALUES(touch_points_json)
-                """, (
-                    user_id,
-                    profile.x_min,
-                    profile.x_max,
-                    profile.y_min,
-                    profile.y_max,
-                    profile.frame_w,
-                    profile.frame_h,
-                    touch_json,
-                ))
-                self.connection.commit()
-                cursor.close()
-                print(f"✅ Калибровка сохранена для user_id={user_id}")
-                return True
-            except Error as e:
-                print(f"❌ Ошибка сохранения калибровки: {e}")
-                return False
-            except Exception as e:
-                print(f"❌ Неизвестная ошибка сохранения калибровки: {e}")
-                traceback.print_exc()
-                return False
-
-    def get_user_calibration(self, user_id):
-        """Загрузка WorkspaceProfile для пользователя или None."""
-        if user_id is None:
-            return None
-
-        with self.lock:
-            try:
-                if not self._ensure_calibration_table():
-                    return None
-
-                cursor = self.connection.cursor(dictionary=True)
-                cursor.execute(
-                    """
-                    SELECT x_min, x_max, y_min, y_max, frame_w, frame_h
-                    FROM user_calibration
-                    WHERE user_id = %s
-                    """,
-                    (user_id,),
-                )
-                row = cursor.fetchone()
-                cursor.close()
-
-                if not row:
-                    return None
-
-                return WorkspaceProfile(
-                    int(row["x_min"]),
-                    int(row["x_max"]),
-                    int(row["y_min"]),
-                    int(row["y_max"]),
-                    int(row["frame_w"]),
-                    int(row["frame_h"]),
-                )
-            except Error as e:
-                print(f"❌ Ошибка загрузки калибровки: {e}")
-                return None
-            except Exception as e:
-                print(f"❌ Неизвестная ошибка загрузки калибровки: {e}")
-                traceback.print_exc()
-                return None

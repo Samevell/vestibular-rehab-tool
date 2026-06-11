@@ -6,9 +6,22 @@ import numpy as np
 import time
 import imageio
 from ex_common import apple_is_active, draw_object_timer, normalize_time_sec
+from calibration import (
+    Calibrator,
+    catch_ok,
+    check_runtime,
+    draw_spawn_zone,
+    head_ok,
+    print_profile_summary,
+    reset_runtime_guard,
+    spawn_object,
+    torso_shift,
+    user_hand_px,
+)
 
 # Инициализация распознавания поз
 mp_pose = mp.solutions.pose
+mp_hands = mp.solutions.hands  # Добавляем распознавание рук
 
 # Загрузка текстуры яблока
 apple_texture = cv2.imread('./img/apple.png', cv2.IMREAD_UNCHANGED)
@@ -34,6 +47,9 @@ circle_radius = 30
 apple_size = (circle_radius * 2, circle_radius * 2)
 apple_texture = cv2.resize(apple_texture, apple_size, interpolation=cv2.INTER_AREA)
 
+# Константа для увеличения радиуса обнаружения
+DETECTION_RADIUS = circle_radius + 10  # +10 пикселей для лучшей отзывчивости
+
 def get_head_vertical_position(results):
     """Определение вертикального положения головы вверх/вниз"""
     if not results.pose_landmarks:
@@ -55,15 +71,46 @@ def get_head_vertical_position(results):
         return "center"
 
 def is_hand_near_apple(hand_position, apple_position):
-    if apple_position is None:
+    if apple_position is None or hand_position is None:
         return False
-    return np.linalg.norm(np.array(hand_position) - np.array(apple_position)) < circle_radius
+    return np.linalg.norm(np.array(hand_position) - np.array(apple_position)) < DETECTION_RADIUS
+
+def get_all_hand_points(results_hands, frame_shape):
+    """
+    Получение всех точек руки: кончики пальцев и центр ладони
+    Возвращает список позиций для проверки касания
+    """
+    hand_points = []
+    h, w, _ = frame_shape
+    
+    if not results_hands.multi_hand_landmarks:
+        return hand_points
+    
+    for hand_landmarks in results_hands.multi_hand_landmarks:
+        # Кончики пальцев (landmark индексы)
+        finger_tips = [4, 8, 12, 16, 20]  # Большой, указательный, средний, безымянный, мизинец
+        
+        for tip_idx in finger_tips:
+            tip = hand_landmarks.landmark[tip_idx]
+            tip_pos = (int(tip.x * w), int(tip.y * h))
+            hand_points.append(tip_pos)
+        
+        # Центр ладони (усредненная позиция между запястьем и основанием пальцев)
+        wrist = hand_landmarks.landmark[0]  # Запястье
+        middle_finger_mcp = hand_landmarks.landmark[9]  # Основание среднего пальца
+        
+        palm_center_x = (wrist.x + middle_finger_mcp.x) / 2
+        palm_center_y = (wrist.y + middle_finger_mcp.y) / 2
+        palm_center_pos = (int(palm_center_x * w), int(palm_center_y * h))
+        hand_points.append(palm_center_pos)
+    
+    return hand_points
 
 class CameraThread7(QThread):
     frame_signal = pyqtSignal(np.ndarray)
     finished = pyqtSignal()
 
-    def __init__(self, objects_count, time_sec, neck_range, background):
+    def __init__(self, objects_count, time_sec, neck_range, background, user_id=0):
         super().__init__()
         self.objects_count = objects_count
         self.time_sec = normalize_time_sec(time_sec)
@@ -76,6 +123,10 @@ class CameraThread7(QThread):
         self.start_time = None
         self.required_direction = None
         self.animation_frame_index = 0
+        self.user_id = user_id
+        self.profile = None
+        self.calibrator = Calibrator(user_id)
+        self.calibrated = False
 
     def get_neck_range_threshold(self):
         """Получение порога диапазона шеи"""
@@ -90,6 +141,7 @@ class CameraThread7(QThread):
 
     def run(self):
         pose = mp_pose.Pose()
+        hands = mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5)  # Инициализируем распознавание рук
         cap = cv2.VideoCapture(0)
 
         if not cap.isOpened():
@@ -106,7 +158,8 @@ class CameraThread7(QThread):
 
             frame = cv2.flip(frame, 1)
             image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            results = pose.process(image_rgb)
+            results_pose = pose.process(image_rgb)
+            results_hands = hands.process(image_rgb)  # Обрабатываем руки
 
             # Обработка фона
             if self.background == 'Дождь':
@@ -127,28 +180,59 @@ class CameraThread7(QThread):
                     snow_overlay = cv2.resize(snow_overlay, (frame.shape[1], frame.shape[0]))
                     frame = cv2.addWeighted(frame, 0.5, snow_overlay, 0.5, 0)
 
-            # Определение вертикального положения головы
-            head_vertical = get_head_vertical_position(results)
+            landmarks = results_pose.pose_landmarks
+            if not self.calibrated:
+                calib = self.calibrator.tick(frame, landmarks)
+                self.frame_signal.emit(calib.frame)
+                if calib.done and calib.profile:
+                    self.profile = calib.profile
+                    self.calibrated = True
+                    reset_runtime_guard()
+                    print_profile_summary(self.profile)
+                continue
+
+            pause_msg = check_runtime(self.profile, landmarks, frame.shape[1], frame.shape[0])
+            if pause_msg:
+                cv2.putText(frame, pause_msg, (20, frame.shape[0] // 2), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 220, 255), 2)
+                self.frame_signal.emit(frame)
+                continue
+
+            shift = torso_shift(self.profile, landmarks, frame.shape[1], frame.shape[0]) if landmarks else (0.0, 0.0)
+            frame = draw_spawn_zone(frame, self.profile, shift, hand="right")
 
             if (self.apple_position is None and self.start_time is None
-                    and results.pose_landmarks):
-                h, w, _ = frame.shape
-                self.apple_position = (np.random.randint(circle_radius, w - circle_radius),
-                                       np.random.randint(circle_radius, h - circle_radius))
+                    and landmarks):
+                self.apple_position = spawn_object(self.profile, shift, hand="right")
                 self.required_direction = np.random.choice(['up', 'down'])
                 self.start_time = time.time()
 
             if self.apple_position is not None and self.start_time is not None:
                 if apple_is_active(self.start_time, self.time_sec):
-                    if results.pose_landmarks:
-                        left_wrist = results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_WRIST]
-                        right_wrist = results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_WRIST]
+                    if landmarks:
+                        # Проверка поимки (улучшенная)
+                        caught = False
+                        
+                        # Метод 1: Проверка через запястья (как в оригинале)
                         h, w, _ = frame.shape
-                        left_hand_pos = (int(left_wrist.x * w), int(left_wrist.y * h))
-                        right_hand_pos = (int(right_wrist.x * w), int(right_wrist.y * h))
-                        head_correct = (head_vertical == self.required_direction)
-                        if head_correct and (is_hand_near_apple(left_hand_pos, self.apple_position) or
-                                             is_hand_near_apple(right_hand_pos, self.apple_position)):
+                        left_hand_pos = user_hand_px(landmarks, w, h, "left")
+                        right_hand_pos = user_hand_px(landmarks, w, h, "right")
+                        
+                        head_correct = head_ok(self.profile, landmarks, w, h, self.required_direction)
+                        
+                        if head_correct and (catch_ok(self.profile, left_hand_pos, self.apple_position) or
+                                             catch_ok(self.profile, right_hand_pos, self.apple_position)):
+                            caught = True
+                        
+                        # Метод 2: Проверка через точки рук (пальцы и центр ладони) - для лучшей отзывчивости
+                        if not caught and head_correct and results_hands.multi_hand_landmarks:
+                            hand_points = get_all_hand_points(results_hands, frame.shape)
+                            for hand_point in hand_points:
+                                if catch_ok(self.profile, hand_point, self.apple_position):
+                                    caught = True
+                                    break
+                        
+                        # Если поймали
+                        if caught:
                             self.score += 1
                             self.apple_position = None
                             self.start_time = None
@@ -167,14 +251,21 @@ class CameraThread7(QThread):
                 alpha_channel = apple_texture[:, :, 3] / 255.0
                 apple_texture_bgr = apple_texture[:, :, :3]
                 
-                for c in range(3):
-                    frame[top_left_y:top_left_y + apple_height, top_left_x:top_left_x + apple_width, c] = (
-                        alpha_channel * apple_texture_bgr[:, :, c] +
-                        (1 - alpha_channel) * frame[top_left_y:top_left_y + apple_height, top_left_x:top_left_x + apple_width, c]
-                    )
+                # Проверка границ
+                if (top_left_x >= 0 and top_left_y >= 0 and 
+                    top_left_x + apple_width <= frame.shape[1] and 
+                    top_left_y + apple_height <= frame.shape[0]):
+                    
+                    for c in range(3):
+                        frame[top_left_y:top_left_y + apple_height, 
+                              top_left_x:top_left_x + apple_width, c] = (
+                            alpha_channel * apple_texture_bgr[:, :, c] +
+                            (1 - alpha_channel) * frame[top_left_y:top_left_y + apple_height, 
+                                                        top_left_x:top_left_x + apple_width, c]
+                        )
 
             # Отображение положения головы и требуемого направления
-            direction_text = f"Head: {head_vertical} | Need: {self.required_direction}"
+            direction_text = f"Need: {self.required_direction}"
             cv2.putText(frame, direction_text, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
             cv2.putText(frame, f'Score: {self.score}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
 
@@ -182,6 +273,8 @@ class CameraThread7(QThread):
             self.frame_signal.emit(frame)
 
         cap.release()
+        pose.close()
+        hands.close()  # Закрываем распознавание рук
         self.finished.emit()
 
     def stop(self):

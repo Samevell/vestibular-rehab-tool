@@ -3,6 +3,8 @@ from mysql.connector import Error
 from datetime import datetime
 import traceback  # Добавляем для детальной отладки
 import threading
+
+from db_config import mysql_connect_kwargs
 class Database:
     def __init__(self):
         self.connection = None
@@ -18,12 +20,7 @@ class Database:
         try:
             print("🔄 Попытка подключения к MySQL...")
             self.connection = mysql.connector.connect(
-                host="127.0.0.1",
-                port="3306",
-                database="trainer",
-                user="me",
-                password="pass",
-                
+                **mysql_connect_kwargs(),
             )
             print("✅ Успешное подключение к MySQL")
             
@@ -309,29 +306,6 @@ class Database:
         except Error as e:
             print(f"❌ Ошибка при получении пользователей: {e}")
             traceback.print_exc()
-            return []
-        finally:
-            if cursor:
-                cursor.close()
-
-    def get_exercise_1_results_raw(self, user_id, limit=50):
-        """Сырые результаты упражнения 1 для аналитики и рекомендаций."""
-        if not self.connect():
-            return []
-        cursor = None
-        try:
-            cursor = self.connection.cursor(dictionary=True)
-            cursor.execute("""
-                SELECT id, apples_count, seconds_per_apple, background, caught_apples,
-                       exercise_date, coefficient, total_score
-                FROM exercise_1_results
-                WHERE user_id = %s
-                ORDER BY exercise_date DESC
-                LIMIT %s
-            """, (user_id, limit))
-            return cursor.fetchall()
-        except Error as e:
-            print(f"❌ get_exercise_1_results_raw: {e}")
             return []
         finally:
             if cursor:

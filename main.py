@@ -3,7 +3,6 @@ import traceback
 from PyQt5 import QtWidgets
 from window_ui import Ui_MainWindow
 from detect_thread import CameraThread
-from calibration_runner import CalibrationThread
 from ex_2 import CameraThread2
 from ex_3 import CameraThread3
 # Импортируем заглушки для упражнений 4-9
@@ -15,19 +14,18 @@ from ex_8 import CameraThread8
 from ex_9 import CameraThread9
 from PyQt5.QtGui import QImage, QPixmap
 import cv2
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QSize, QSize
 from PyQt5.QtCore import QSettings
 from PyQt5 import QtGui
 from widgets.clickable_card import ClickableCard
 from style_loader import load_styles
-from analytics_widget import AnalyticsWidget
-from rehab_config import (
-    APPLE_COUNT_MAX,
-    APPLE_COUNT_MIN,
-    SECONDS_PER_APPLE_MAX,
-    SECONDS_PER_APPLE_MIN,
+from analytics.recommend import recommend
+from analytics.ui_binding import (
+    apply_exercise_params,
+    exercise_id_from_key,
+    load_dict_to_ui_params,
+    read_exercise_params,
 )
-from recommender import load_exercise_1_history, recommend_exercise_1
 
 # Импортируем БД с предварительным подключением
 try:
@@ -143,9 +141,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.card_train_btn.clicked.connect(self.open_page_choose_ex)
             self.ui.card_settings_btn.clicked.connect(self.open_page_settings)
             self.ui.card_history_btn.clicked.connect(self.open_history_page)
-            self.ui.card_analytics_btn.clicked.connect(self.open_analytics_page)
             self.ui.pushButton_3.clicked.connect(self.open_main_page)
-            self.ui.btn_back_analytics.clicked.connect(self.open_main_page)
             self.ui.btn_back_choose_ex.clicked.connect(self.open_main_page)
             
             # Подключаем карточки упражнений
@@ -162,25 +158,18 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.btn_start_ex.clicked.connect(self.start_current_exercise)
             self.ui.btn_back_video.clicked.connect(self.stop_camera)
             self.ui.card_exit_btn.clicked.connect(self.close)
-            self._setup_calibration_ui()
             self.ui.pushButton.clicked.connect(self.save_user_settings)
             self.ui.btn_back_settings.clicked.connect(
                 lambda: self.ui.stacked_widget_main.setCurrentIndex(0)
             )
             self.ui.btn_delete_user.clicked.connect(self.delete_selected_user)
-            self.ui.btn_recommend_params.clicked.connect(self.apply_recommendation)
-            
-            # Лимиты spinbox упражнения 1 (rehab_config)
-            self.ui.spinBox_apple_count.setMinimum(APPLE_COUNT_MIN)
-            self.ui.spinBox_apple_count.setMaximum(APPLE_COUNT_MAX)
-            self.ui.spinBox_apple_second.setMinimum(SECONDS_PER_APPLE_MIN)
-            self.ui.spinBox_apple_second.setMaximum(SECONDS_PER_APPLE_MAX)
             
             # Подключаем изменение выбора в комбобоксе
             self.ui.comboBox_choose_user.currentIndexChanged.connect(self.on_user_selected)
             
             # Настраиваем таблицу истории
             self.setup_history_table()
+            self.setup_recommendation_buttons()
             
             self.ui.stacked_widget_main.setCurrentWidget(self.ui.page_main)
             self.ui.stacked_widget_ex_choose.setCurrentWidget(self.ui.page_emty)
@@ -191,25 +180,37 @@ class MainWindow(QtWidgets.QMainWindow):
             # Загружаем изображения
             print("🔄 Загрузка изображений...")
             try:
-                self.original_pixmap = QPixmap("./img/123.jpg")
+                self.original_pixmap = QPixmap("./img/eex1.png")
                 self.ui.lable_apple_example_img.setAlignment(Qt.AlignCenter)
                 self.ui.lable_apple_example_img.setScaledContents(False)
                 
-                self.original_pixmap_ex2 = QPixmap("./img/222.jpg")
+                self.original_pixmap_ex2 = QPixmap("./img/eex2.png")
                 self.ui.lable_apple_example_img_2.setAlignment(Qt.AlignCenter)
                 self.ui.lable_apple_example_img_2.setScaledContents(False)
 
-                self.original_pixmap_ex3 = QPixmap("./img/333.jpg")
+                self.original_pixmap_ex3 = QPixmap("./img/eex3.png")
                 self.ui.lable_apple_example_img_3.setAlignment(Qt.AlignCenter)
                 self.ui.lable_apple_example_img_3.setScaledContents(False)
                 
                 # Заглушки для изображений упражнений 4-9
-                self.original_pixmap_ex4 = QPixmap("./img/444.jpg") if QPixmap("./img/444.jpg") else QPixmap()
-                self.original_pixmap_ex5 = QPixmap("./img/555.jpg") if QPixmap("./img/555.jpg") else QPixmap()
-                self.original_pixmap_ex6 = QPixmap("./img/666.jpg") if QPixmap("./img/666.jpg") else QPixmap()
-                self.original_pixmap_ex7 = QPixmap("./img/777.jpg") if QPixmap("./img/777.jpg") else QPixmap()
-                self.original_pixmap_ex8 = QPixmap("./img/888.jpg") if QPixmap("./img/888.jpg") else QPixmap()
-                self.original_pixmap_ex9 = QPixmap("./img/999.jpg") if QPixmap("./img/999.jpg") else QPixmap()
+                self.original_pixmap_ex4 = QPixmap("./img/eex4.png") if QPixmap("./img/eex4.png") else QPixmap()
+                self.ui.lable_apple_example_img_4.setAlignment(Qt.AlignCenter)
+                self.ui.lable_apple_example_img_4.setScaledContents(False)
+                self.original_pixmap_ex5 = QPixmap("./img/eex5.png") if QPixmap("./img/eex5.png") else QPixmap()
+                self.ui.lable_apple_example_img_5.setAlignment(Qt.AlignCenter)
+                self.ui.lable_apple_example_img_5.setScaledContents(False)
+                self.original_pixmap_ex6 = QPixmap("./img/eex6.png") if QPixmap("./img/eex6.png") else QPixmap()
+                self.ui.lable_apple_example_img_6.setAlignment(Qt.AlignCenter)
+                self.ui.lable_apple_example_img_6.setScaledContents(False)
+                self.original_pixmap_ex7 = QPixmap("./img/eex7.png") if QPixmap("./img/eex7.png") else QPixmap()
+                self.ui.lable_apple_example_img_7.setAlignment(Qt.AlignCenter)
+                self.ui.lable_apple_example_img_7.setScaledContents(False)
+                self.original_pixmap_ex8 = QPixmap("./img/eex8.png") if QPixmap("./img/eex8.png") else QPixmap()
+                self.ui.lable_apple_example_img_8.setAlignment(Qt.AlignCenter)
+                self.ui.lable_apple_example_img_8.setScaledContents(False)
+                self.original_pixmap_ex9 = QPixmap("./img/eex9.png") if QPixmap("./img/eex9.png") else QPixmap()
+                self.ui.lable_apple_example_img_9.setAlignment(Qt.AlignCenter)
+                self.ui.lable_apple_example_img_9.setScaledContents(False)
                 
             except Exception as e:
                 print(f"⚠️ Ошибка загрузки изображений: {e}")
@@ -226,7 +227,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.exercise_type = None
 
             self.current_exercise = None
-            self._analytics_widget = None
             
             print("✅ MainWindow инициализирован успешно")
             print("=" * 50)
@@ -240,6 +240,134 @@ class MainWindow(QtWidgets.QMainWindow):
                 f"Не удалось инициализировать приложение:\n{str(e)}"
             )
             sys.exit(1)
+
+    def setup_recommendation_buttons(self):
+        """Кнопки назначения врача и рекомендаций на экране выбора упражнения."""
+        icon_size = QSize(20, 20)
+        font = QtGui.QFont()
+        font.setPointSize(15)
+        buttons_icons = (
+            (self.ui.btn_save_baseline, "./img/bookmark_icon.svg"),
+            (self.ui.btn_apply_recommendation, "./img/sparkles_icon.svg"),
+            (self.ui.btn_restore_baseline, "./img/reset_icon.svg"),
+        )
+        for btn, icon_path in buttons_icons:
+            btn.setFont(font)
+            btn.setIcon(QtGui.QIcon(icon_path))
+            btn.setIconSize(icon_size)
+            btn.setCursor(QtGui.QCursor(Qt.PointingHandCursor))
+
+        self.ui.btn_save_baseline.clicked.connect(self.save_doctor_baseline_for_current)
+        self.ui.btn_apply_recommendation.clicked.connect(
+            self.apply_recommendation_for_current
+        )
+        self.ui.btn_restore_baseline.clicked.connect(
+            self.restore_doctor_baseline_for_current
+        )
+        self.ui.stacked_widget_ex_choose.currentChanged.connect(
+            self._update_prescription_panel_visibility
+        )
+        self._update_prescription_panel_visibility()
+
+    def _update_prescription_panel_visibility(self):
+        exercise_selected = (
+            self.ui.stacked_widget_ex_choose.currentWidget() != self.ui.page_emty
+        )
+        self.ui.frame_prescription_actions.setVisible(exercise_selected)
+
+    def _current_exercise_id(self):
+        return exercise_id_from_key(self.current_exercise)
+
+    def _require_user_and_exercise(self):
+        if not self.current_user_id:
+            QtWidgets.QMessageBox.warning(
+                self, "Пользователь", "Выберите пользователя в настройках."
+            )
+            return None
+        exercise_id = self._current_exercise_id()
+        if not exercise_id:
+            QtWidgets.QMessageBox.warning(
+                self, "Упражнение", "Сначала выберите упражнение."
+            )
+            return None
+        if not self.db:
+            QtWidgets.QMessageBox.warning(self, "База данных", "База данных недоступна.")
+            return None
+        return exercise_id
+
+    def save_doctor_baseline_for_current(self):
+        exercise_id = self._require_user_and_exercise()
+        if exercise_id is None:
+            return
+
+        params = read_exercise_params(self.ui, exercise_id)
+        if self.db.save_doctor_baseline(self.current_user_id, exercise_id, params):
+            QtWidgets.QMessageBox.information(
+                self,
+                "Назначение врача",
+                f"Параметры упражнения {exercise_id} сохранены как назначение врача.",
+            )
+        else:
+            QtWidgets.QMessageBox.warning(
+                self, "Ошибка", "Не удалось сохранить назначение врача."
+            )
+
+    def restore_doctor_baseline_for_current(self):
+        exercise_id = self._require_user_and_exercise()
+        if exercise_id is None:
+            return
+
+        baseline = self.db.get_doctor_baseline(self.current_user_id, exercise_id)
+        if not baseline:
+            QtWidgets.QMessageBox.information(
+                self,
+                "Назначение врача",
+                "Для этого упражнения назначение врача ещё не сохранено.",
+            )
+            return
+
+        apply_exercise_params(self.ui, exercise_id, baseline, load_only=False)
+
+    def apply_recommendation_for_current(self):
+        exercise_id = self._require_user_and_exercise()
+        if exercise_id is None:
+            return
+
+        baseline = self.db.get_doctor_baseline(self.current_user_id, exercise_id)
+        if not baseline:
+            QtWidgets.QMessageBox.information(
+                self,
+                "Рекомендация",
+                "Сначала сохраните назначение врача для этого упражнения.",
+            )
+            return
+
+        history = self.db.get_exercise_sessions(
+            self.current_user_id, exercise_id, limit=6
+        )
+        result = recommend(exercise_id, baseline, history)
+
+        ui_params = load_dict_to_ui_params(exercise_id, result.load)
+        apply_exercise_params(self.ui, exercise_id, ui_params, load_only=True)
+
+        if not result.sufficient_data:
+            QtWidgets.QMessageBox.information(
+                self,
+                "Рекомендация",
+                "Недостаточно данных по истории (нужно минимум 2 занятия).\n"
+                "Используется назначение врача без изменений.",
+            )
+            return
+
+        action = {-1: "упрощение", 0: "без изменений", 1: "усложнение"}[result.delta]
+        metrics = result.metrics
+        QtWidgets.QMessageBox.information(
+            self,
+            "Рекомендация",
+            f"Рекомендация применена: {action}.\n"
+            f"Средняя успешность: {metrics.s_bar:.1f}%\n"
+            f"Тренд: {metrics.trend:+.1f} п.п.",
+        )
 
     def setup_history_table(self):
         """Настройка таблицы истории тренировок (БЕЗ ID)"""
@@ -677,13 +805,8 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.exercise_score = 0
         
-        self.exercise_start_time = time.time()
-        
-        self.thread = CameraThread(
-            difficulty, seconds, background, sound,
-            user_id=self.current_user_id,
-            db=self.db,
-        )
+        user_id = self.current_user_id if self.current_user_id is not None else 0
+        self.thread = CameraThread(difficulty, seconds, background, sound, user_id=user_id)
         self.thread.frame_signal.connect(self.update_frame)
         self.thread.finished.connect(self.on_exercise_finished)
         self.thread.start()
@@ -703,7 +826,8 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.exercise_score = 0
         
-        self.thread = CameraThread2(difficulty, seconds, background)
+        user_id = self.current_user_id if self.current_user_id is not None else 0
+        self.thread = CameraThread2(difficulty, seconds, background, user_id=user_id)
         self.thread.frame_signal.connect(self.update_frame)
         self.thread.finished.connect(self.on_exercise_finished)
         self.thread.start()
@@ -723,7 +847,8 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.exercise_score = 0
         
-        self.thread = CameraThread3(difficulty, speed, background)
+        user_id = self.current_user_id if self.current_user_id is not None else 0
+        self.thread = CameraThread3(difficulty, speed, background, user_id=user_id)
         self.thread.frame_signal.connect(self.update_frame)
         self.thread.finished.connect(self.on_exercise_finished)
         self.thread.start()
@@ -746,7 +871,8 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.exercise_score = 0
         
-        self.thread = CameraThread4(objects_count, time_sec, speed, background)
+        user_id = self.current_user_id if self.current_user_id is not None else 0
+        self.thread = CameraThread4(objects_count, time_sec, speed, background, user_id=user_id)
         self.thread.frame_signal.connect(self.update_frame)
         self.thread.finished.connect(self.on_exercise_finished)
         self.thread.start()
@@ -769,7 +895,8 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.exercise_score = 0
         
-        self.thread = CameraThread5(objects_count, time_sec, speed, background)
+        user_id = self.current_user_id if self.current_user_id is not None else 0
+        self.thread = CameraThread5(objects_count, time_sec, speed, background, user_id=user_id)
         self.thread.frame_signal.connect(self.update_frame)
         self.thread.finished.connect(self.on_exercise_finished)
         self.thread.start()
@@ -791,7 +918,8 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.exercise_score = 0
         
-        self.thread = CameraThread6(objects_count, time_sec, background)
+        user_id = self.current_user_id if self.current_user_id is not None else 0
+        self.thread = CameraThread6(objects_count, time_sec, background, user_id=user_id)
         self.thread.frame_signal.connect(self.update_frame)
         self.thread.finished.connect(self.on_exercise_finished)
         self.thread.start()
@@ -802,7 +930,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
         objects_count = self.ui.spinBox_ex7_count.value()
         time_sec = self.ui.spinBox_ex7_time.value()
-        neck_range = 'Средний'
+        neck_range = self.ui.comboBox_ex7_neck.currentText()
         background = self.ui.comboBox_ex7_fon.currentText()
         
         self.exercise_params = {
@@ -815,7 +943,8 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.exercise_score = 0
         
-        self.thread = CameraThread7(objects_count, time_sec, neck_range, background)
+        user_id = self.current_user_id if self.current_user_id is not None else 0
+        self.thread = CameraThread7(objects_count, time_sec, neck_range, background, user_id=user_id)
         self.thread.frame_signal.connect(self.update_frame)
         self.thread.finished.connect(self.on_exercise_finished)
         self.thread.start()
@@ -840,7 +969,10 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.exercise_score = 0
         
-        self.thread = CameraThread8(objects_count, time_sec, color_interval, speed, background)
+        user_id = self.current_user_id if self.current_user_id is not None else 0
+        self.thread = CameraThread8(
+            objects_count, time_sec, color_interval, speed, background, user_id=user_id
+        )
         self.thread.frame_signal.connect(self.update_frame)
         self.thread.finished.connect(self.on_exercise_finished)
         self.thread.start()
@@ -865,7 +997,10 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.exercise_score = 0
         
-        self.thread = CameraThread9(objects_count, color_interval, speed, background)
+        user_id = self.current_user_id if self.current_user_id is not None else 0
+        self.thread = CameraThread9(
+            objects_count, color_interval, speed, background, user_id=user_id
+        )
         self.thread.frame_signal.connect(self.update_frame)
         self.thread.finished.connect(self.on_exercise_finished)
         self.thread.start()
@@ -912,21 +1047,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 total_score = self.calculate_total_score(
                     objects_count, caught_objects, coefficient
                 )
-
-                session_duration_sec = None
-                exit_reason = None
-                if hasattr(self.thread, "session_duration_sec") and self.thread.session_duration_sec is not None:
-                    session_duration_sec = self.thread.session_duration_sec
-                elif hasattr(self, "exercise_start_time"):
-                    session_duration_sec = int(round(time.time() - self.exercise_start_time))
-                if hasattr(self.thread, "exit_reason"):
-                    exit_reason = self.thread.exit_reason
                 
                 success = self.db.save_exercise_1(
                     self.current_user_id, objects_count, seconds_per_object, 
-                    background, caught_objects, coefficient, total_score,
-                    session_duration_sec=session_duration_sec,
-                    exit_reason=exit_reason,
+                    background, caught_objects, coefficient, total_score
                 )
             
             # Упражнение 2
@@ -1104,49 +1228,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 f"Не удалось сохранить результаты:\n{str(e)}"
             )
 
-    def apply_recommendation(self):
-        """Подбор параметров упражнения 1 по истории."""
-        if self.current_user_id is None:
-            QtWidgets.QMessageBox.warning(
-                self, "Рекомендации", "Сначала выберите пользователя в настройках"
-            )
-            return
-
-        if self.db is None:
-            QtWidgets.QMessageBox.warning(self, "Рекомендации", "База данных недоступна")
-            return
-
-        last_params = {
-            "apples_count": self.ui.spinBox_apple_count.value(),
-            "seconds_per_apple": self.ui.spinBox_apple_second.value(),
-        }
-        has_calibration = False
-        if hasattr(self.db, "has_user_calibration"):
-            has_calibration = self.db.has_user_calibration(self.current_user_id)
-
-        history = load_exercise_1_history(self.db, self.current_user_id)
-
-        result = recommend_exercise_1(history, last_params, has_calibration)
-
-        self.ui.spinBox_apple_count.setValue(result["apples_count"])
-        self.ui.spinBox_apple_second.setValue(result["seconds_per_apple"])
-
-        hint = f"Уровень нагрузки: {result['load_level']}"
-        if result.get("ewma_success") is not None:
-            hint += f" | EWMA: {int(round(result['ewma_success'] * 100))}%"
-        self.ui.label_recommend_hint.setText(hint)
-
-        reasons_text = "\n".join(f"• {r}" for r in result["reasons"])
-        QtWidgets.QMessageBox.information(
-            self,
-            "Рекомендуемые параметры",
-            f"Количество яблок: {result['apples_count']}\n"
-            f"Время на яблоко: {result['seconds_per_apple']} сек\n"
-            f"Уровень нагрузки: {result['load_level']}\n\n"
-            f"{reasons_text}",
-        )
-        print(f"📋 Рекомендация упр.1: {result}")
-
     # ==================== Навигация ====================
     
     def open_page_choose_ex(self):
@@ -1157,50 +1238,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def open_main_page(self):
         self.ui.stacked_widget_main.setCurrentWidget(self.ui.page_main)
-
-    def _setup_calibration_ui(self):
-        """Кнопка калибровки на главной (Agent 1)."""
-        self.btn_calibration = QtWidgets.QPushButton("Калибровка зоны", self.ui.page_main)
-        self.btn_calibration.setMinimumHeight(36)
-        self.btn_calibration.clicked.connect(self.start_standalone_calibration)
-        self.ui.horizontalLayout.insertWidget(2, self.btn_calibration)
-
-    def start_standalone_calibration(self):
-        """Отдельная сессия калибровки на label_video."""
-        if self.current_user_id is None:
-            QtWidgets.QMessageBox.warning(
-                self,
-                "Пользователь не выбран",
-                "Выберите пользователя на главной странице перед калибровкой.",
-            )
-            return
-        if self.db is None:
-            QtWidgets.QMessageBox.warning(self, "Ошибка", "База данных недоступна.")
-            return
-
-        if hasattr(self, "calibration_thread") and self.calibration_thread.isRunning():
-            return
-
-        self.ui.stacked_widget_main.setCurrentWidget(self.ui.page_ex)
-        self.calibration_thread = CalibrationThread(self.current_user_id, self.db)
-        self.calibration_thread.frame_signal.connect(self.update_frame)
-        self.calibration_thread.profile_saved.connect(self._on_calibration_profile_saved)
-        self.calibration_thread.finished.connect(self._on_standalone_calibration_finished)
-        self.calibration_thread.start()
-
-    def _on_calibration_profile_saved(self, profile):
-        print(f"Профиль зоны сохранён: {profile.to_dict()}")
-
-    def _on_standalone_calibration_finished(self):
-        if hasattr(self, "calibration_thread"):
-            self.calibration_thread.wait()
-            if getattr(self.calibration_thread, "calibrated", False):
-                QtWidgets.QMessageBox.information(
-                    self,
-                    "Калибровка",
-                    "Калибровка завершена. Зона сохранена для выбранного пользователя.",
-                )
-        self.open_main_page()
     
     # ==================== Отображение описаний упражнений ====================
     
@@ -1388,60 +1425,12 @@ class MainWindow(QtWidgets.QMainWindow):
         if hasattr(self, 'thread'):
             self.thread.stop()
             self.thread.wait()
-        if hasattr(self, 'calibration_thread') and self.calibration_thread.isRunning():
-            self.calibration_thread.stop()
-            self.calibration_thread.wait()
         self.open_page_choose_ex()
+        self.current_exercise = None
         self.ui.stacked_widget_ex_choose.setCurrentWidget(self.ui.page_emty)
-
-    def _ensure_analytics_widget(self):
-        """Встраивает AnalyticsWidget на page_analytics (один раз)."""
-        if self._analytics_widget is not None:
-            return
-        host_layout = QtWidgets.QVBoxLayout(self.ui.analytics_widget_host)
-        host_layout.setContentsMargins(0, 0, 0, 0)
-        self._analytics_widget = AnalyticsWidget(self.ui.analytics_widget_host)
-        self._analytics_widget.set_database(self.db)
-        host_layout.addWidget(self._analytics_widget)
-
-    def open_analytics_page(self):
-        """Открытие страницы аналитики для текущего пользователя."""
-        if not self.current_user_id:
-            QtWidgets.QMessageBox.warning(
-                self,
-                "Пользователь не выбран",
-                "Пожалуйста, выберите пользователя из списка на главной странице.",
-            )
-            return
-
-        if self.db is None:
-            QtWidgets.QMessageBox.warning(
-                self,
-                "База данных недоступна",
-                "Не удалось подключиться к базе данных.",
-            )
-            return
-
-        self._ensure_analytics_widget()
-        self._analytics_widget.load_user(self.current_user_id)
-
-        user_name = self.ui.comboBox_choose_user.currentText()
-        if user_name == "-- Выберите пользователя --":
-            user_name = "Не выбран"
-        self.ui.label_analytics_title.setText(f"Аналитика тренировок — {user_name}")
-
-        self.ui.stacked_widget_main.setCurrentWidget(self.ui.page_analytics)
 
     def open_history_page(self):
         """Открытие страницы истории тренировок"""
-        if not self.current_user_id:
-            QtWidgets.QMessageBox.warning(
-                self,
-                "Пользователь не выбран",
-                "Пожалуйста, выберите пользователя из списка на главной странице.",
-            )
-            return
-
         self.ui.stacked_widget_main.setCurrentWidget(self.ui.page)
         self.load_history()
     
@@ -1455,6 +1444,15 @@ class MainWindow(QtWidgets.QMainWindow):
                     "База данных недоступна",
                     "Не удалось подключиться к базе данных."
                 )
+                return
+            
+            if not self.current_user_id:
+                QtWidgets.QMessageBox.warning(
+                    self,
+                    "Пользователь не выбран",
+                    "Пожалуйста, выберите пользователя из списка на главной странице."
+                )
+                self.open_main_page()
                 return
             
             print("🔄 Загрузка истории тренировок...")

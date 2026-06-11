@@ -10,15 +10,11 @@ def check_database_before_gui():
     
     try:
         import mysql.connector
-        
-        # Пытаемся подключиться
+        from db_config import mysql_connect_kwargs
+
         conn = mysql.connector.connect(
-            host="127.0.0.1",
-            port="3306",
-            database="trainer",
-            user="me",
-            password="pass",
-            connection_timeout=3
+            **mysql_connect_kwargs(),
+            connection_timeout=3,
         )
         
         if conn.is_connected():
