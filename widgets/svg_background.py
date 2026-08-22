@@ -3,11 +3,13 @@ from PyQt5.QtSvg import QSvgRenderer
 from PyQt5.QtGui import QPainter
 from PyQt5.QtCore import Qt, QRectF
 
+from app_paths import resolve_asset
+
 class SvgBackground(QWidget):
     def __init__(self, svg_path, parent=None, keep_aspect=False):
         super().__init__(parent)
 
-        self.renderer = QSvgRenderer(svg_path)
+        self.renderer = QSvgRenderer(resolve_asset(svg_path))
         self.keep_aspect = keep_aspect
 
         # всегда не перехватывает клики
@@ -40,43 +42,39 @@ class WavesBackground(SvgBackground):
         super().__init__("./img/waves.svg", parent, keep_aspect=True)
 
     def resizeEvent(self, event):
-        if self.parent():
-            parent_rect = self.parent().rect()
+        self.sync_to_parent()
+        if event is not None:
+            super().resizeEvent(event)
 
-            w = int(parent_rect.width() * 0.6)
+    def sync_to_parent(self):
+        if not self.parent():
+            return
+        parent_rect = self.parent().rect()
+        w = int(parent_rect.width() * 0.6)
+        svg_size = self.renderer.defaultSize()
+        if svg_size.isValid():
+            ratio = svg_size.height() / svg_size.width()
+            h = int(w * ratio)
+        else:
+            h = int(parent_rect.height() * 0.6)
+        self.setGeometry(parent_rect.width() - w, parent_rect.height() - h, w, h)
+        self.lower()
 
-            # если сохраняем пропорции — высоту берём из SVG
-            svg_size = self.renderer.defaultSize()
-            if svg_size.isValid():
-                ratio = svg_size.height() / svg_size.width()
-                h = int(w * ratio)
-            else:
-                h = int(parent_rect.height() * 0.6)
-
-            # пример: нижний правый угол
-            x = parent_rect.width() - w
-            y = parent_rect.height() - h
-
-            self.setGeometry(x, y, w, h)
-            self.lower()
-
-        super().resizeEvent(event)
 
 class DotsBackground(SvgBackground):
     def __init__(self, parent=None):
         super().__init__("./img/dots.svg", parent, keep_aspect=True)
 
     def resizeEvent(self, event):
-        if self.parent():
-            parent_rect = self.parent().rect()
+        self.sync_to_parent()
+        if event is not None:
+            super().resizeEvent(event)
 
-            w = 300
-            h = 200
-
-            x = 0
-            y = parent_rect.height() - h
-
-            self.setGeometry(x, y, w, h)
-            self.lower()
-
-        super().resizeEvent(event)
+    def sync_to_parent(self):
+        if not self.parent():
+            return
+        parent_rect = self.parent().rect()
+        w = 300
+        h = 200
+        self.setGeometry(0, parent_rect.height() - h, w, h)
+        self.lower()

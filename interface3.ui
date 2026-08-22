@@ -21,20 +21,41 @@
     <string notr="true"/>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_2">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
     <item>
      <widget class="QStackedWidget" name="stacked_widget_main">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>1</horstretch>
+        <verstretch>1</verstretch>
+       </sizepolicy>
+      </property>
       <property name="styleSheet">
        <string notr="true"/>
       </property>
       <property name="currentIndex">
-       <number>4</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="page_main">
        <layout class="QVBoxLayout" name="verticalLayout_21">
         <item>
          <layout class="QVBoxLayout" name="verticalLayout_20" stretch="0,0,1,0,3,0">
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0">
+           <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,1">
             <item>
              <spacer name="horizontalSpacer_3">
               <property name="orientation">
@@ -45,14 +66,14 @@
               </property>
               <property name="sizeHint" stdset="0">
                <size>
-                <width>40</width>
+                <width>8</width>
                 <height>20</height>
                </size>
               </property>
              </spacer>
             </item>
             <item>
-             <widget class="QComboBox" name="comboBox_choose_user">
+             <widget class="ClickableCard" name="btn_current_user">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -61,36 +82,82 @@
               </property>
               <property name="minimumSize">
                <size>
-                <width>100</width>
-                <height>0</height>
+                <width>210</width>
+                <height>66</height>
                </size>
               </property>
-              <property name="font">
-               <font>
-                <pointsize>8</pointsize>
-               </font>
+              <property name="maximumSize">
+               <size>
+                <width>630</width>
+                <height>72</height>
+               </size>
               </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="label_16">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
               </property>
-              <property name="font">
-               <font>
-                <pointsize>12</pointsize>
-               </font>
+              <property name="toolTip">
+               <string>Настройки пациента</string>
               </property>
-              <property name="text">
-               <string>Пользователь:</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_current_user">
+               <property name="spacing">
+                <number>12</number>
+               </property>
+               <property name="leftMargin">
+                <number>9</number>
+               </property>
+               <property name="topMargin">
+                <number>6</number>
+               </property>
+               <property name="rightMargin">
+                <number>21</number>
+               </property>
+               <property name="bottomMargin">
+                <number>6</number>
+               </property>
+               <item>
+                <widget class="UserAvatar" name="label_user_avatar">
+                 <property name="minimumSize">
+                  <size>
+                   <width>54</width>
+                   <height>54</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>54</width>
+                   <height>54</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="svg_file" stdset="0">
+                  <string>./img/user_icon.svg</string>
+                 </property>
+                 <property name="main_color" stdset="0">
+                  <string>#1dbeb7</string>
+                 </property>
+                 <property name="circle_color" stdset="0">
+                  <string>#e8f8f7</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_current_user">
+                 <property name="font">
+                  <font>
+                   <pointsize>18</pointsize>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Пациент</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </widget>
             </item>
             <item>
@@ -187,8 +254,8 @@
               </property>
               <property name="minimumSize">
                <size>
-                <width>180</width>
-                <height>200</height>
+                <width>140</width>
+                <height>160</height>
                </size>
               </property>
               <property name="maximumSize">
@@ -245,7 +312,7 @@
                  </property>
                  <property name="font">
                   <font>
-                   <pointsize>12</pointsize>
+                   <pointsize>14</pointsize>
                    <weight>75</weight>
                    <bold>true</bold>
                   </font>
@@ -271,7 +338,7 @@
                  </property>
                  <property name="font">
                   <font>
-                   <pointsize>9</pointsize>
+                   <pointsize>11</pointsize>
                   </font>
                  </property>
                  <property name="text">
@@ -298,8 +365,8 @@
               </property>
               <property name="minimumSize">
                <size>
-                <width>180</width>
-                <height>200</height>
+                <width>140</width>
+                <height>160</height>
                </size>
               </property>
               <property name="maximumSize">
@@ -356,7 +423,7 @@
                  </property>
                  <property name="font">
                   <font>
-                   <pointsize>12</pointsize>
+                   <pointsize>14</pointsize>
                    <weight>75</weight>
                    <bold>true</bold>
                   </font>
@@ -382,7 +449,7 @@
                  </property>
                  <property name="font">
                   <font>
-                   <pointsize>9</pointsize>
+                   <pointsize>11</pointsize>
                   </font>
                  </property>
                  <property name="text">
@@ -409,8 +476,8 @@
               </property>
               <property name="minimumSize">
                <size>
-                <width>180</width>
-                <height>200</height>
+                <width>140</width>
+                <height>160</height>
                </size>
               </property>
               <property name="maximumSize">
@@ -467,7 +534,7 @@
                  </property>
                  <property name="font">
                   <font>
-                   <pointsize>12</pointsize>
+                   <pointsize>14</pointsize>
                    <weight>75</weight>
                    <bold>true</bold>
                   </font>
@@ -496,7 +563,7 @@
                  </property>
                  <property name="font">
                   <font>
-                   <pointsize>9</pointsize>
+                   <pointsize>11</pointsize>
                   </font>
                  </property>
                  <property name="text">
@@ -523,8 +590,8 @@
               </property>
               <property name="minimumSize">
                <size>
-                <width>180</width>
-                <height>200</height>
+                <width>140</width>
+                <height>160</height>
                </size>
               </property>
               <property name="maximumSize">
@@ -581,7 +648,7 @@
                  </property>
                  <property name="font">
                   <font>
-                   <pointsize>12</pointsize>
+                   <pointsize>14</pointsize>
                    <weight>75</weight>
                    <bold>true</bold>
                   </font>
@@ -607,7 +674,7 @@
                  </property>
                  <property name="font">
                   <font>
-                   <pointsize>9</pointsize>
+                   <pointsize>11</pointsize>
                   </font>
                  </property>
                  <property name="text">
@@ -680,284 +747,692 @@
       </widget>
       <widget class="QWidget" name="page">
        <layout class="QVBoxLayout" name="verticalLayout_9">
+        <property name="spacing">
+         <number>12</number>
+        </property>
+        <property name="leftMargin">
+         <number>16</number>
+        </property>
+        <property name="topMargin">
+         <number>12</number>
+        </property>
+        <property name="rightMargin">
+         <number>16</number>
+        </property>
+        <property name="bottomMargin">
+         <number>12</number>
+        </property>
         <item>
-         <widget class="QLabel" name="label_17">
-          <property name="font">
-           <font>
-            <pointsize>20</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string>История тренировок</string>
-          </property>
-         </widget>
+         <layout class="QHBoxLayout" name="horizontalLayout_history_top">
+          <item>
+           <widget class="QPushButton" name="pushButton_3">
+            <property name="minimumSize">
+             <size>
+              <width>110</width>
+              <height>44</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>14</pointsize>
+             </font>
+            </property>
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="text">
+             <string>Назад</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_history_title">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="label_17">
+              <property name="font">
+               <font>
+                <pointsize>20</pointsize>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>История тренировок</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="label_history_user">
+              <property name="font">
+               <font>
+                <pointsize>16</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Пациент</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_history_top">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>110</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </item>
         <item>
-         <widget class="QTableWidget" name="tableWidget"/>
+         <layout class="QHBoxLayout" name="horizontalLayout_history_filters">
+          <item>
+           <widget class="QLabel" name="label_history_exercise">
+            <property name="text">
+             <string>Упражнение</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="combo_history_exercise">
+            <property name="minimumSize">
+             <size>
+              <width>180</width>
+              <height>38</height>
+             </size>
+            </property>
+            <item>
+             <property name="text">
+              <string>Все упражнения</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_history_period">
+            <property name="text">
+             <string>Период</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btn_history_period">
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>38</height>
+             </size>
+            </property>
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="text">
+             <string>Всё время</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_history_filters">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton_3">
-          <property name="font">
-           <font>
-            <pointsize>20</pointsize>
-           </font>
+         <layout class="QHBoxLayout" name="horizontalLayout_history_charts">
+          <property name="spacing">
+           <number>12</number>
           </property>
-          <property name="cursor">
-           <cursorShape>PointingHandCursor</cursorShape>
-          </property>
-          <property name="text">
-           <string>Назад</string>
-          </property>
+          <item>
+           <widget class="BlockContainer" name="card_chart_success">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>1</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>180</width>
+              <height>140</height>
+             </size>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_chart_success">
+             <property name="leftMargin">
+              <number>8</number>
+             </property>
+             <property name="topMargin">
+              <number>8</number>
+             </property>
+             <property name="rightMargin">
+              <number>8</number>
+             </property>
+             <property name="bottomMargin">
+              <number>8</number>
+             </property>
+             <item>
+              <widget class="HistoryLineChart" name="chart_history_success"/>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="BlockContainer" name="card_chart_exercises">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>1</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>180</width>
+              <height>140</height>
+             </size>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_chart_exercises">
+             <property name="leftMargin">
+              <number>8</number>
+             </property>
+             <property name="topMargin">
+              <number>8</number>
+             </property>
+             <property name="rightMargin">
+              <number>8</number>
+             </property>
+             <property name="bottomMargin">
+              <number>8</number>
+             </property>
+             <item>
+              <widget class="HistoryBarChart" name="chart_history_exercises"/>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="BlockContainer" name="card_history_table">
+          <layout class="QVBoxLayout" name="verticalLayout_history_table">
+           <property name="leftMargin">
+            <number>12</number>
+           </property>
+           <property name="topMargin">
+            <number>12</number>
+           </property>
+           <property name="rightMargin">
+            <number>12</number>
+           </property>
+           <property name="bottomMargin">
+            <number>12</number>
+           </property>
+           <item>
+            <widget class="QTableWidget" name="tableWidget"/>
+           </item>
+          </layout>
          </widget>
         </item>
        </layout>
       </widget>
       <widget class="QWidget" name="page_settings">
        <layout class="QVBoxLayout" name="verticalLayout_8">
-        <item>
-         <spacer name="verticalSpacer_17">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QLabel" name="label">
-          <property name="font">
-           <font>
-            <pointsize>30</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string>Настройки</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer name="verticalSpacer_19">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_14">
-          <property name="font">
-           <font>
-            <pointsize>20</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string>Введите ваше имя</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="lineEdit_UserName">
-          <property name="font">
-           <font>
-            <pointsize>20</pointsize>
-           </font>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer name="verticalSpacer_20">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_15">
-          <property name="font">
-           <font>
-            <pointsize>20</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string>Введите вашу фамилию</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="lineEdit_UserLastName">
-          <property name="font">
-           <font>
-            <pointsize>20</pointsize>
-           </font>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer name="verticalSpacer_18">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QPushButton" name="pushButton">
-          <property name="font">
-           <font>
-            <pointsize>20</pointsize>
-           </font>
-          </property>
-          <property name="cursor">
-           <cursorShape>PointingHandCursor</cursorShape>
-          </property>
-          <property name="text">
-           <string>Сохранить</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="btn_back_settings">
-          <property name="font">
-           <font>
-            <pointsize>20</pointsize>
-           </font>
-          </property>
-          <property name="cursor">
-           <cursorShape>PointingHandCursor</cursorShape>
-          </property>
-          <property name="text">
-           <string>Назад</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QListWidget" name="userListSettings">
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>150</height>
-           </size>
-          </property>
-          <property name="font">
-           <font>
-            <family>Segoe UI</family>
-            <pointsize>10</pointsize>
-           </font>
-          </property>
-          <property name="styleSheet">
-           <string notr="true">QListWidget {
-    background-color: #f5f7fa;
-    border: 1px solid #dcdfe6;
-    border-radius: 12px;
-    padding: 6px;
-    outline: none;
-}
-
-QListWidget::item {
-    background-color: white;
-    padding: 10px;
-    margin: 4px 0px;
-    border-radius: 8px;
-}
-
-QListWidget::item:hover {
-    background-color: #e6f7f5;
-}
-
-QListWidget::item:selected {
-    background-color: #14d4c7;
-    color: white;
-}
-
-QListWidget::item:selected:hover {
-    background-color: #0fb3a8;
-}
-
-QScrollBar:vertical {
-    border: none;
-    background: transparent;
-    width: 8px;
-    margin: 4px 0 4px 0;
-}
-
-QScrollBar::handle:vertical {
-    background: #c1c1c1;
-    border-radius: 4px;
-    min-height: 20px;
-}
-
-QScrollBar::handle:vertical:hover {
-    background: #a8a8a8;
-}
-
-QScrollBar::add-line:vertical,
-QScrollBar::sub-line:vertical {
-    height: 0px;
-}</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="btn_delete_user">
-          <property name="font">
-           <font>
-            <pointsize>20</pointsize>
-           </font>
-          </property>
-          <property name="cursor">
-           <cursorShape>PointingHandCursor</cursorShape>
-          </property>
-          <property name="text">
-           <string>Удалить пользователя</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer name="verticalSpacer_16">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="page_choose_ex_23">
-       <layout class="QGridLayout" name="gridLayout_3" rowstretch="0" columnstretch="0">
-        <property name="horizontalSpacing">
-         <number>20</number>
+        <property name="spacing">
+         <number>8</number>
         </property>
-        <property name="verticalSpacing">
-         <number>24</number>
-        </property>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_settings_top">
+          <item>
+           <widget class="QPushButton" name="btn_back_settings">
+            <property name="minimumSize">
+             <size>
+              <width>140</width>
+              <height>52</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>17</pointsize>
+             </font>
+            </property>
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="text">
+             <string>Назад</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_settings_top">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_settings_body">
+          <item>
+           <spacer name="horizontalSpacer_settings_left">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="BlockContainer" name="card_app_settings">
+            <property name="minimumSize">
+             <size>
+              <width>480</width>
+              <height>380</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_settings_card">
+             <property name="spacing">
+              <number>16</number>
+             </property>
+             <property name="leftMargin">
+              <number>28</number>
+             </property>
+             <property name="topMargin">
+              <number>24</number>
+             </property>
+             <property name="rightMargin">
+              <number>28</number>
+             </property>
+             <property name="bottomMargin">
+              <number>24</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="label_settings_title">
+               <property name="font">
+                <font>
+                 <pointsize>31</pointsize>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>Настройки приложения</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_settings_cols" stretch="3,2">
+               <property name="spacing">
+                <number>28</number>
+               </property>
+               <item>
+                <layout class="QVBoxLayout" name="verticalLayout_settings_left">
+                 <property name="spacing">
+                  <number>10</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="label_settings_screen">
+                   <property name="font">
+                    <font>
+                     <pointsize>18</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="text">
+                    <string>Экран</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="checkBox_fullscreen">
+                   <property name="font">
+                    <font>
+                     <pointsize>17</pointsize>
+                    </font>
+                   </property>
+                   <property name="cursor">
+                    <cursorShape>PointingHandCursor</cursorShape>
+                   </property>
+                   <property name="text">
+                    <string>Полный экран</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="label_settings_camera">
+                   <property name="font">
+                    <font>
+                     <pointsize>18</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="text">
+                    <string>Камера</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_camera">
+                   <item>
+                    <widget class="QLabel" name="label_camera">
+                     <property name="font">
+                      <font>
+                       <pointsize>17</pointsize>
+                      </font>
+                     </property>
+                     <property name="text">
+                      <string>Источник</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QComboBox" name="combo_camera">
+                     <property name="minimumSize">
+                      <size>
+                       <width>200</width>
+                       <height>50</height>
+                      </size>
+                     </property>
+                     <property name="font">
+                      <font>
+                       <pointsize>17</pointsize>
+                      </font>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="checkBox_mirror">
+                   <property name="font">
+                    <font>
+                     <pointsize>17</pointsize>
+                    </font>
+                   </property>
+                   <property name="cursor">
+                    <cursorShape>PointingHandCursor</cursorShape>
+                   </property>
+                   <property name="text">
+                    <string>Зеркало камеры</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="label_settings_train">
+                   <property name="font">
+                    <font>
+                     <pointsize>18</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="text">
+                    <string>Тренировка</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_volume">
+                   <item>
+                    <widget class="QLabel" name="label_volume">
+                     <property name="font">
+                      <font>
+                       <pointsize>17</pointsize>
+                      </font>
+                     </property>
+                     <property name="text">
+                      <string>Громкость</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QSlider" name="slider_volume">
+                     <property name="maximum">
+                      <number>100</number>
+                     </property>
+                     <property name="value">
+                      <number>70</number>
+                     </property>
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="label_volume_value">
+                     <property name="minimumSize">
+                      <size>
+                       <width>58</width>
+                       <height>0</height>
+                      </size>
+                     </property>
+                     <property name="font">
+                      <font>
+                       <pointsize>17</pointsize>
+                      </font>
+                     </property>
+                     <property name="text">
+                      <string>70%</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_audio">
+                   <item>
+                    <widget class="QLabel" name="label_audio_output">
+                     <property name="font">
+                      <font>
+                       <pointsize>17</pointsize>
+                      </font>
+                     </property>
+                     <property name="text">
+                      <string>Динамик</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QComboBox" name="combo_audio_output">
+                     <property name="minimumSize">
+                      <size>
+                       <width>200</width>
+                       <height>50</height>
+                      </size>
+                     </property>
+                     <property name="font">
+                      <font>
+                       <pointsize>17</pointsize>
+                      </font>
+                     </property>
+                     <property name="sizeAdjustPolicy">
+                      <enum>QComboBox::AdjustToMinimumContentsLengthWithIcon</enum>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="checkBox_skeleton">
+                   <property name="font">
+                    <font>
+                     <pointsize>17</pointsize>
+                    </font>
+                   </property>
+                   <property name="cursor">
+                    <cursorShape>PointingHandCursor</cursorShape>
+                   </property>
+                   <property name="text">
+                    <string>Показ скелета</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="checkBox_autopause">
+                   <property name="font">
+                    <font>
+                     <pointsize>17</pointsize>
+                    </font>
+                   </property>
+                   <property name="cursor">
+                    <cursorShape>PointingHandCursor</cursorShape>
+                   </property>
+                   <property name="text">
+                    <string>Автопауза, если нет человека в кадре</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_settings_left">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>12</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <layout class="QVBoxLayout" name="verticalLayout_settings_preview">
+                 <property name="spacing">
+                  <number>8</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="label_preview_caption">
+                   <property name="font">
+                    <font>
+                     <pointsize>18</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="text">
+                    <string>Превью камеры</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="label_camera_preview">
+                   <property name="minimumSize">
+                    <size>
+                     <width>180</width>
+                     <height>140</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>420</width>
+                     <height>320</height>
+                    </size>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignCenter</set>
+                   </property>
+                   <property name="text">
+                    <string>Нет изображения</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_settings_preview">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_settings_right">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_settings_bottom">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>12</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="page_choose_ex">
@@ -1091,7 +1566,7 @@ QScrollBar::sub-line:vertical {
                        <widget class="QLabel" name="label_19">
                         <property name="font">
                          <font>
-                          <pointsize>12</pointsize>
+                          <pointsize>14</pointsize>
                          </font>
                         </property>
                         <property name="text">
@@ -1103,7 +1578,7 @@ QScrollBar::sub-line:vertical {
                        <widget class="QLabel" name="label_20">
                         <property name="font">
                          <font>
-                          <pointsize>10</pointsize>
+                          <pointsize>12</pointsize>
                          </font>
                         </property>
                         <property name="text">
@@ -1183,7 +1658,7 @@ QScrollBar::sub-line:vertical {
                        <widget class="QLabel" name="label_23">
                         <property name="font">
                          <font>
-                          <pointsize>12</pointsize>
+                          <pointsize>14</pointsize>
                          </font>
                         </property>
                         <property name="text">
@@ -1195,7 +1670,7 @@ QScrollBar::sub-line:vertical {
                        <widget class="QLabel" name="label_24">
                         <property name="font">
                          <font>
-                          <pointsize>10</pointsize>
+                          <pointsize>12</pointsize>
                          </font>
                         </property>
                         <property name="text">
@@ -1275,7 +1750,7 @@ QScrollBar::sub-line:vertical {
                        <widget class="QLabel" name="label_26">
                         <property name="font">
                          <font>
-                          <pointsize>12</pointsize>
+                          <pointsize>14</pointsize>
                          </font>
                         </property>
                         <property name="text">
@@ -1287,7 +1762,7 @@ QScrollBar::sub-line:vertical {
                        <widget class="QLabel" name="label_27">
                         <property name="font">
                          <font>
-                          <pointsize>10</pointsize>
+                          <pointsize>12</pointsize>
                          </font>
                         </property>
                         <property name="text">
@@ -1367,7 +1842,7 @@ QScrollBar::sub-line:vertical {
                        <widget class="QLabel" name="label_29">
                         <property name="font">
                          <font>
-                          <pointsize>12</pointsize>
+                          <pointsize>14</pointsize>
                          </font>
                         </property>
                         <property name="text">
@@ -1379,7 +1854,7 @@ QScrollBar::sub-line:vertical {
                        <widget class="QLabel" name="label_30">
                         <property name="font">
                          <font>
-                          <pointsize>10</pointsize>
+                          <pointsize>12</pointsize>
                          </font>
                         </property>
                         <property name="text">
@@ -1459,7 +1934,7 @@ QScrollBar::sub-line:vertical {
                        <widget class="QLabel" name="label_32">
                         <property name="font">
                          <font>
-                          <pointsize>12</pointsize>
+                          <pointsize>14</pointsize>
                          </font>
                         </property>
                         <property name="text">
@@ -1471,7 +1946,7 @@ QScrollBar::sub-line:vertical {
                        <widget class="QLabel" name="label_33">
                         <property name="font">
                          <font>
-                          <pointsize>10</pointsize>
+                          <pointsize>12</pointsize>
                          </font>
                         </property>
                         <property name="text">
@@ -1551,7 +2026,7 @@ QScrollBar::sub-line:vertical {
                        <widget class="QLabel" name="label_35">
                         <property name="font">
                          <font>
-                          <pointsize>12</pointsize>
+                          <pointsize>14</pointsize>
                          </font>
                         </property>
                         <property name="text">
@@ -1563,7 +2038,7 @@ QScrollBar::sub-line:vertical {
                        <widget class="QLabel" name="label_36">
                         <property name="font">
                          <font>
-                          <pointsize>10</pointsize>
+                          <pointsize>12</pointsize>
                          </font>
                         </property>
                         <property name="text">
@@ -1643,7 +2118,7 @@ QScrollBar::sub-line:vertical {
                        <widget class="QLabel" name="label_38">
                         <property name="font">
                          <font>
-                          <pointsize>12</pointsize>
+                          <pointsize>14</pointsize>
                          </font>
                         </property>
                         <property name="text">
@@ -1655,7 +2130,7 @@ QScrollBar::sub-line:vertical {
                        <widget class="QLabel" name="label_39">
                         <property name="font">
                          <font>
-                          <pointsize>10</pointsize>
+                          <pointsize>12</pointsize>
                          </font>
                         </property>
                         <property name="text">
@@ -1735,7 +2210,7 @@ QScrollBar::sub-line:vertical {
                        <widget class="QLabel" name="label_41">
                         <property name="font">
                          <font>
-                          <pointsize>12</pointsize>
+                          <pointsize>14</pointsize>
                          </font>
                         </property>
                         <property name="text">
@@ -1747,7 +2222,7 @@ QScrollBar::sub-line:vertical {
                        <widget class="QLabel" name="label_42">
                         <property name="font">
                          <font>
-                          <pointsize>10</pointsize>
+                          <pointsize>12</pointsize>
                          </font>
                         </property>
                         <property name="text">
@@ -1827,7 +2302,7 @@ QScrollBar::sub-line:vertical {
                        <widget class="QLabel" name="label_44">
                         <property name="font">
                          <font>
-                          <pointsize>12</pointsize>
+                          <pointsize>14</pointsize>
                          </font>
                         </property>
                         <property name="text">
@@ -1839,7 +2314,7 @@ QScrollBar::sub-line:vertical {
                        <widget class="QLabel" name="label_45">
                         <property name="font">
                          <font>
-                          <pointsize>10</pointsize>
+                          <pointsize>12</pointsize>
                          </font>
                         </property>
                         <property name="text">
@@ -1921,7 +2396,7 @@ QScrollBar::sub-line:vertical {
                 </sizepolicy>
                </property>
                <property name="currentIndex">
-                <number>10</number>
+                <number>0</number>
                </property>
                <widget class="QWidget" name="page_emty"/>
                <widget class="QWidget" name="page_apples">
@@ -1984,40 +2459,29 @@ QScrollBar::sub-line:vertical {
                     <enum>Qt::Vertical</enum>
                    </property>
                    <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
+                    <enum>QSizePolicy::Fixed</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>100</height>
+                     <height>12</height>
                     </size>
                    </property>
                   </spacer>
                  </item>
                  <item>
-                  <widget class="QLabel" name="lable_apple_example_img">
+                  <widget class="ExampleImage" name="lable_apple_example_img">
                    <property name="sizePolicy">
-                    <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                      <horstretch>0</horstretch>
-                     <verstretch>160</verstretch>
+                     <verstretch>1</verstretch>
                     </sizepolicy>
                    </property>
                    <property name="minimumSize">
                     <size>
-                     <width>300</width>
-                     <height>200</height>
+                     <width>240</width>
+                     <height>140</height>
                     </size>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <pointsize>14</pointsize>
-                    </font>
-                   </property>
-                   <property name="text">
-                    <string>Изображение примера</string>
-                   </property>
-                   <property name="scaledContents">
-                    <bool>true</bool>
                    </property>
                   </widget>
                  </item>
@@ -2027,12 +2491,12 @@ QScrollBar::sub-line:vertical {
                     <enum>Qt::Vertical</enum>
                    </property>
                    <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
+                    <enum>QSizePolicy::Fixed</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>40</height>
+                     <height>12</height>
                     </size>
                    </property>
                   </spacer>
@@ -2252,17 +2716,6 @@ QScrollBar::sub-line:vertical {
                  </item>
                 </layout>
                </widget>
-               <widget class="QWidget" name="page_anus">
-                <layout class="QVBoxLayout" name="verticalLayout_5">
-                 <item>
-                  <widget class="QLabel" name="label_anus">
-                   <property name="text">
-                    <string/>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
                <widget class="QWidget" name="page_ex2">
                 <property name="enabled">
                  <bool>true</bool>
@@ -2309,7 +2762,7 @@ QScrollBar::sub-line:vertical {
                    </property>
                    <property name="font">
                     <font>
-                     <pointsize>12</pointsize>
+                     <pointsize>14</pointsize>
                     </font>
                    </property>
                    <property name="text">
@@ -2326,40 +2779,29 @@ QScrollBar::sub-line:vertical {
                     <enum>Qt::Vertical</enum>
                    </property>
                    <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
+                    <enum>QSizePolicy::Fixed</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>100</height>
+                     <height>12</height>
                     </size>
                    </property>
                   </spacer>
                  </item>
                  <item>
-                  <widget class="QLabel" name="lable_apple_example_img_2">
+                  <widget class="ExampleImage" name="lable_apple_example_img_2">
                    <property name="sizePolicy">
-                    <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                      <horstretch>0</horstretch>
-                     <verstretch>160</verstretch>
+                     <verstretch>1</verstretch>
                     </sizepolicy>
                    </property>
                    <property name="minimumSize">
                     <size>
-                     <width>300</width>
-                     <height>200</height>
+                     <width>240</width>
+                     <height>140</height>
                     </size>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <pointsize>14</pointsize>
-                    </font>
-                   </property>
-                   <property name="text">
-                    <string>Изображение примера</string>
-                   </property>
-                   <property name="scaledContents">
-                    <bool>true</bool>
                    </property>
                   </widget>
                  </item>
@@ -2369,12 +2811,12 @@ QScrollBar::sub-line:vertical {
                     <enum>Qt::Vertical</enum>
                    </property>
                    <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
+                    <enum>QSizePolicy::Fixed</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>40</height>
+                     <height>12</height>
                     </size>
                    </property>
                   </spacer>
@@ -2590,40 +3032,29 @@ QScrollBar::sub-line:vertical {
                     <enum>Qt::Vertical</enum>
                    </property>
                    <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
+                    <enum>QSizePolicy::Fixed</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>100</height>
+                     <height>12</height>
                     </size>
                    </property>
                   </spacer>
                  </item>
                  <item>
-                  <widget class="QLabel" name="lable_apple_example_img_3">
+                  <widget class="ExampleImage" name="lable_apple_example_img_3">
                    <property name="sizePolicy">
-                    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                      <horstretch>0</horstretch>
-                     <verstretch>160</verstretch>
+                     <verstretch>1</verstretch>
                     </sizepolicy>
                    </property>
                    <property name="minimumSize">
                     <size>
-                     <width>300</width>
-                     <height>200</height>
+                     <width>240</width>
+                     <height>140</height>
                     </size>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <pointsize>14</pointsize>
-                    </font>
-                   </property>
-                   <property name="text">
-                    <string>Изображение примера</string>
-                   </property>
-                   <property name="scaledContents">
-                    <bool>true</bool>
                    </property>
                   </widget>
                  </item>
@@ -2633,12 +3064,12 @@ QScrollBar::sub-line:vertical {
                     <enum>Qt::Vertical</enum>
                    </property>
                    <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
+                    <enum>QSizePolicy::Fixed</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>40</height>
+                     <height>12</height>
                     </size>
                    </property>
                   </spacer>
@@ -2866,40 +3297,29 @@ QScrollBar::sub-line:vertical {
                     <enum>Qt::Vertical</enum>
                    </property>
                    <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
+                    <enum>QSizePolicy::Fixed</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>100</height>
+                     <height>12</height>
                     </size>
                    </property>
                   </spacer>
                  </item>
                  <item>
-                  <widget class="QLabel" name="lable_apple_example_img_4">
+                  <widget class="ExampleImage" name="lable_apple_example_img_4">
                    <property name="sizePolicy">
-                    <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                      <horstretch>0</horstretch>
-                     <verstretch>160</verstretch>
+                     <verstretch>1</verstretch>
                     </sizepolicy>
                    </property>
                    <property name="minimumSize">
                     <size>
-                     <width>300</width>
-                     <height>200</height>
+                     <width>240</width>
+                     <height>140</height>
                     </size>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <pointsize>14</pointsize>
-                    </font>
-                   </property>
-                   <property name="text">
-                    <string>Изображение примера (заглушка)</string>
-                   </property>
-                   <property name="scaledContents">
-                    <bool>true</bool>
                    </property>
                   </widget>
                  </item>
@@ -2909,12 +3329,12 @@ QScrollBar::sub-line:vertical {
                     <enum>Qt::Vertical</enum>
                    </property>
                    <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
+                    <enum>QSizePolicy::Fixed</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>40</height>
+                     <height>12</height>
                     </size>
                    </property>
                   </spacer>
@@ -3232,40 +3652,29 @@ QScrollBar::sub-line:vertical {
                     <enum>Qt::Vertical</enum>
                    </property>
                    <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
+                    <enum>QSizePolicy::Fixed</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>100</height>
+                     <height>12</height>
                     </size>
                    </property>
                   </spacer>
                  </item>
                  <item>
-                  <widget class="QLabel" name="lable_apple_example_img_5">
+                  <widget class="ExampleImage" name="lable_apple_example_img_5">
                    <property name="sizePolicy">
-                    <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                      <horstretch>0</horstretch>
-                     <verstretch>160</verstretch>
+                     <verstretch>1</verstretch>
                     </sizepolicy>
                    </property>
                    <property name="minimumSize">
                     <size>
-                     <width>300</width>
-                     <height>200</height>
+                     <width>240</width>
+                     <height>140</height>
                     </size>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <pointsize>14</pointsize>
-                    </font>
-                   </property>
-                   <property name="text">
-                    <string>Изображение примера (заглушка)</string>
-                   </property>
-                   <property name="scaledContents">
-                    <bool>true</bool>
                    </property>
                   </widget>
                  </item>
@@ -3275,12 +3684,12 @@ QScrollBar::sub-line:vertical {
                     <enum>Qt::Vertical</enum>
                    </property>
                    <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
+                    <enum>QSizePolicy::Fixed</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>40</height>
+                     <height>12</height>
                     </size>
                    </property>
                   </spacer>
@@ -3503,25 +3912,6 @@ QScrollBar::sub-line:vertical {
                   </layout>
                  </item>
                  <item>
-                  <widget class="QLabel" name="label_warning_ex5">
-                   <property name="font">
-                    <font>
-                     <pointsize>10</pointsize>
-                     <italic>true</italic>
-                    </font>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">color: #e74c3c;</string>
-                   </property>
-                   <property name="text">
-                    <string>⚠ Противопоказано при ДППГ с вовлечением заднего полукружного канала</string>
-                   </property>
-                   <property name="wordWrap">
-                    <bool>true</bool>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
                   <spacer name="verticalSpacer_28">
                    <property name="orientation">
                     <enum>Qt::Vertical</enum>
@@ -3596,40 +3986,29 @@ QScrollBar::sub-line:vertical {
                     <enum>Qt::Vertical</enum>
                    </property>
                    <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
+                    <enum>QSizePolicy::Fixed</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>100</height>
+                     <height>12</height>
                     </size>
                    </property>
                   </spacer>
                  </item>
                  <item>
-                  <widget class="QLabel" name="lable_apple_example_img_6">
+                  <widget class="ExampleImage" name="lable_apple_example_img_6">
                    <property name="sizePolicy">
-                    <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                      <horstretch>0</horstretch>
-                     <verstretch>160</verstretch>
+                     <verstretch>1</verstretch>
                     </sizepolicy>
                    </property>
                    <property name="minimumSize">
                     <size>
-                     <width>300</width>
-                     <height>200</height>
+                     <width>240</width>
+                     <height>140</height>
                     </size>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <pointsize>14</pointsize>
-                    </font>
-                   </property>
-                   <property name="text">
-                    <string>Изображение примера (заглушка)</string>
-                   </property>
-                   <property name="scaledContents">
-                    <bool>true</bool>
                    </property>
                   </widget>
                  </item>
@@ -3639,12 +4018,12 @@ QScrollBar::sub-line:vertical {
                     <enum>Qt::Vertical</enum>
                    </property>
                    <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
+                    <enum>QSizePolicy::Fixed</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>40</height>
+                     <height>12</height>
                     </size>
                    </property>
                   </spacer>
@@ -3888,40 +4267,29 @@ QScrollBar::sub-line:vertical {
                     <enum>Qt::Vertical</enum>
                    </property>
                    <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
+                    <enum>QSizePolicy::Fixed</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>100</height>
+                     <height>12</height>
                     </size>
                    </property>
                   </spacer>
                  </item>
                  <item>
-                  <widget class="QLabel" name="lable_apple_example_img_7">
+                  <widget class="ExampleImage" name="lable_apple_example_img_7">
                    <property name="sizePolicy">
-                    <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                      <horstretch>0</horstretch>
-                     <verstretch>160</verstretch>
+                     <verstretch>1</verstretch>
                     </sizepolicy>
                    </property>
                    <property name="minimumSize">
                     <size>
-                     <width>300</width>
-                     <height>200</height>
+                     <width>240</width>
+                     <height>140</height>
                     </size>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <pointsize>14</pointsize>
-                    </font>
-                   </property>
-                   <property name="text">
-                    <string>Изображение примера (заглушка)</string>
-                   </property>
-                   <property name="scaledContents">
-                    <bool>true</bool>
                    </property>
                   </widget>
                  </item>
@@ -3931,12 +4299,12 @@ QScrollBar::sub-line:vertical {
                     <enum>Qt::Vertical</enum>
                    </property>
                    <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
+                    <enum>QSizePolicy::Fixed</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>40</height>
+                     <height>12</height>
                     </size>
                    </property>
                   </spacer>
@@ -4162,25 +4530,6 @@ QScrollBar::sub-line:vertical {
                   </layout>
                  </item>
                  <item>
-                  <widget class="QLabel" name="label_warning_ex7">
-                   <property name="font">
-                    <font>
-                     <pointsize>10</pointsize>
-                     <italic>true</italic>
-                    </font>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">color: #e74c3c;</string>
-                   </property>
-                   <property name="text">
-                    <string>⚠ Противопоказано при отолитиазе с вовлечением заднего полукружного канала</string>
-                   </property>
-                   <property name="wordWrap">
-                    <bool>true</bool>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
                   <spacer name="verticalSpacer_36">
                    <property name="orientation">
                     <enum>Qt::Vertical</enum>
@@ -4255,40 +4604,29 @@ QScrollBar::sub-line:vertical {
                     <enum>Qt::Vertical</enum>
                    </property>
                    <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
+                    <enum>QSizePolicy::Fixed</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>100</height>
+                     <height>12</height>
                     </size>
                    </property>
                   </spacer>
                  </item>
                  <item>
-                  <widget class="QLabel" name="lable_apple_example_img_8">
+                  <widget class="ExampleImage" name="lable_apple_example_img_8">
                    <property name="sizePolicy">
-                    <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                      <horstretch>0</horstretch>
-                     <verstretch>160</verstretch>
+                     <verstretch>1</verstretch>
                     </sizepolicy>
                    </property>
                    <property name="minimumSize">
                     <size>
-                     <width>300</width>
-                     <height>200</height>
+                     <width>240</width>
+                     <height>140</height>
                     </size>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <pointsize>14</pointsize>
-                    </font>
-                   </property>
-                   <property name="text">
-                    <string>Изображение примера (заглушка)</string>
-                   </property>
-                   <property name="scaledContents">
-                    <bool>true</bool>
                    </property>
                   </widget>
                  </item>
@@ -4298,12 +4636,12 @@ QScrollBar::sub-line:vertical {
                     <enum>Qt::Vertical</enum>
                    </property>
                    <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
+                    <enum>QSizePolicy::Fixed</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>40</height>
+                     <height>12</height>
                     </size>
                    </property>
                   </spacer>
@@ -4606,40 +4944,29 @@ QScrollBar::sub-line:vertical {
                     <enum>Qt::Vertical</enum>
                    </property>
                    <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
+                    <enum>QSizePolicy::Fixed</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>100</height>
+                     <height>12</height>
                     </size>
                    </property>
                   </spacer>
                  </item>
                  <item>
-                  <widget class="QLabel" name="lable_apple_example_img_9">
+                  <widget class="ExampleImage" name="lable_apple_example_img_9">
                    <property name="sizePolicy">
-                    <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                      <horstretch>0</horstretch>
-                     <verstretch>160</verstretch>
+                     <verstretch>1</verstretch>
                     </sizepolicy>
                    </property>
                    <property name="minimumSize">
                     <size>
-                     <width>300</width>
-                     <height>200</height>
+                     <width>240</width>
+                     <height>140</height>
                     </size>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <pointsize>14</pointsize>
-                    </font>
-                   </property>
-                   <property name="text">
-                    <string>Изображение примера (заглушка)</string>
-                   </property>
-                   <property name="scaledContents">
-                    <bool>true</bool>
                    </property>
                   </widget>
                  </item>
@@ -4649,12 +4976,12 @@ QScrollBar::sub-line:vertical {
                     <enum>Qt::Vertical</enum>
                    </property>
                    <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
+                    <enum>QSizePolicy::Fixed</enum>
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
                      <width>20</width>
-                     <height>40</height>
+                     <height>12</height>
                     </size>
                    </property>
                   </spacer>
@@ -4921,7 +5248,7 @@ QScrollBar::sub-line:vertical {
                  <widget class="QLabel" name="label_prescription_actions">
                   <property name="font">
                    <font>
-                    <pointsize>13</pointsize>
+                    <pointsize>16</pointsize>
                     <weight>75</weight>
                    </font>
                   </property>
@@ -5032,49 +5359,843 @@ QScrollBar::sub-line:vertical {
        </layout>
       </widget>
       <widget class="QWidget" name="page_ex">
-       <layout class="QVBoxLayout" name="verticalLayout_4">
-        <item>
+       <layout class="QGridLayout" name="gridLayout_page_ex">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item row="0" column="0">
          <widget class="QLabel" name="label_video">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
-          <property name="styleSheet">
-           <string notr="true"/>
-          </property>
           <property name="text">
            <string>Видео</string>
           </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
          </widget>
         </item>
-        <item>
+        <item row="0" column="0" alignment="Qt::AlignLeft|Qt::AlignTop">
          <widget class="QPushButton" name="btn_back_video">
+          <property name="minimumSize">
+           <size>
+            <width>148</width>
+            <height>44</height>
+           </size>
+          </property>
           <property name="font">
            <font>
-            <pointsize>15</pointsize>
+            <pointsize>14</pointsize>
            </font>
           </property>
           <property name="cursor">
            <cursorShape>PointingHandCursor</cursorShape>
           </property>
           <property name="text">
-           <string>Назад</string>
+           <string>Завершить</string>
           </property>
          </widget>
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="page_startup">
+       <layout class="QVBoxLayout" name="verticalLayout_startup">
+        <property name="spacing">
+         <number>12</number>
+        </property>
+        <item>
+         <spacer name="verticalSpacer_startup_top">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>24</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_startup_body">
+          <item>
+           <spacer name="horizontalSpacer_startup_left">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="BlockContainer" name="card_startup">
+            <property name="minimumSize">
+             <size>
+              <width>480</width>
+              <height>560</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_startup_card">
+             <property name="spacing">
+              <number>0</number>
+             </property>
+             <property name="leftMargin">
+              <number>36</number>
+             </property>
+             <property name="topMargin">
+              <number>36</number>
+             </property>
+             <property name="rightMargin">
+              <number>36</number>
+             </property>
+             <property name="bottomMargin">
+              <number>31</number>
+             </property>
+             <item>
+              <widget class="QStackedWidget" name="stacked_startup">
+               <property name="currentIndex">
+                <number>0</number>
+               </property>
+               <widget class="QWidget" name="page_startup_select">
+                <layout class="QVBoxLayout" name="verticalLayout_startup_select">
+                 <property name="spacing">
+                  <number>10</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="label_startup_select_title">
+                   <property name="font">
+                    <font>
+                     <pointsize>26</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="text">
+                    <string>Выберите пациента</string>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QListWidget" name="listWidget_startup_users">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>140</height>
+                    </size>
+                   </property>
+                   <property name="font">
+                    <font>
+                     <family>Segoe UI</family>
+                     <pointsize>16</pointsize>
+                    </font>
+                   </property>
+                   <property name="frameShape">
+                    <enum>QFrame::NoFrame</enum>
+                   </property>
+                   <property name="horizontalScrollBarPolicy">
+                    <enum>Qt::ScrollBarAlwaysOff</enum>
+                   </property>
+                   <property name="spacing">
+                    <number>8</number>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btn_startup_continue">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>62</height>
+                    </size>
+                   </property>
+                   <property name="font">
+                    <font>
+                     <pointsize>18</pointsize>
+                    </font>
+                   </property>
+                   <property name="cursor">
+                    <cursorShape>PointingHandCursor</cursorShape>
+                   </property>
+                   <property name="text">
+                    <string>Продолжить</string>
+                   </property>
+                   <property name="default">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btn_startup_new_user">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>57</height>
+                    </size>
+                   </property>
+                   <property name="font">
+                    <font>
+                     <pointsize>17</pointsize>
+                    </font>
+                   </property>
+                   <property name="cursor">
+                    <cursorShape>PointingHandCursor</cursorShape>
+                   </property>
+                   <property name="text">
+                    <string>Новый пациент</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="page_startup_create">
+                <layout class="QVBoxLayout" name="verticalLayout_startup_create">
+                 <property name="spacing">
+                  <number>8</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="CardIcon" name="icon_startup_create">
+                   <property name="minimumSize">
+                    <size>
+                     <width>83</width>
+                     <height>83</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>83</width>
+                     <height>83</height>
+                    </size>
+                   </property>
+                   <property name="svg_file" stdset="0">
+                    <string>./img/user_icon.svg</string>
+                   </property>
+                   <property name="main_color" stdset="0">
+                    <string>#1dbeb7</string>
+                   </property>
+                   <property name="circle_color" stdset="0">
+                    <string>#e8f8f7</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="label_startup_create_title">
+                   <property name="font">
+                    <font>
+                     <pointsize>26</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="text">
+                    <string>Первый вход</string>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="label_startup_create_hint">
+                   <property name="font">
+                    <font>
+                     <pointsize>14</pointsize>
+                    </font>
+                   </property>
+                   <property name="text">
+                    <string>Введите имя и фамилию пациента</string>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_startup_create_top">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>8</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="label_startup_first_name">
+                   <property name="font">
+                    <font>
+                     <pointsize>16</pointsize>
+                    </font>
+                   </property>
+                   <property name="text">
+                    <string>Имя</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="lineEdit_startup_first_name">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>57</height>
+                    </size>
+                   </property>
+                   <property name="font">
+                    <font>
+                     <pointsize>18</pointsize>
+                    </font>
+                   </property>
+                   <property name="placeholderText">
+                    <string>Введите имя</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="label_startup_last_name">
+                   <property name="font">
+                    <font>
+                     <pointsize>16</pointsize>
+                    </font>
+                   </property>
+                   <property name="text">
+                    <string>Фамилия</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="lineEdit_startup_last_name">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>57</height>
+                    </size>
+                   </property>
+                   <property name="font">
+                    <font>
+                     <pointsize>18</pointsize>
+                    </font>
+                   </property>
+                   <property name="placeholderText">
+                    <string>Введите фамилию</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_startup_create">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>16</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btn_startup_create">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>62</height>
+                    </size>
+                   </property>
+                   <property name="font">
+                    <font>
+                     <pointsize>18</pointsize>
+                    </font>
+                   </property>
+                   <property name="cursor">
+                    <cursorShape>PointingHandCursor</cursorShape>
+                   </property>
+                   <property name="text">
+                    <string>Создать и продолжить</string>
+                   </property>
+                   <property name="default">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btn_startup_back_to_select">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>57</height>
+                    </size>
+                   </property>
+                   <property name="font">
+                    <font>
+                     <pointsize>17</pointsize>
+                    </font>
+                   </property>
+                   <property name="cursor">
+                    <cursorShape>PointingHandCursor</cursorShape>
+                   </property>
+                   <property name="text">
+                    <string>Назад</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_startup_right">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_startup_bottom">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>24</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="page_user_profile">
+       <layout class="QVBoxLayout" name="verticalLayout_user_profile">
+        <property name="spacing">
+         <number>8</number>
+        </property>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_user_profile_top">
+          <item>
+           <widget class="QPushButton" name="btn_user_profile_back">
+            <property name="minimumSize">
+             <size>
+              <width>110</width>
+              <height>44</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>14</pointsize>
+             </font>
+            </property>
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="text">
+             <string>Назад</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_user_profile_top">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_user_profile_top">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>12</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_user_profile_card">
+          <item>
+           <spacer name="horizontalSpacer_user_profile_left">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="BlockContainer" name="card_user_profile">
+            <property name="minimumSize">
+             <size>
+              <width>360</width>
+              <height>420</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>560</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_user_profile_card">
+             <property name="spacing">
+              <number>10</number>
+             </property>
+             <property name="leftMargin">
+              <number>32</number>
+             </property>
+             <property name="topMargin">
+              <number>28</number>
+             </property>
+             <property name="rightMargin">
+              <number>32</number>
+             </property>
+             <property name="bottomMargin">
+              <number>24</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="label_user_profile_title">
+               <property name="font">
+                <font>
+                 <pointsize>20</pointsize>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>Настройки пациента</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="UserAvatar" name="avatar_user_profile">
+               <property name="minimumSize">
+                <size>
+                 <width>128</width>
+                 <height>128</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>128</width>
+                 <height>128</height>
+                </size>
+               </property>
+               <property name="svg_file" stdset="0">
+                <string>./img/user_icon.svg</string>
+               </property>
+               <property name="main_color" stdset="0">
+                <string>#1dbeb7</string>
+               </property>
+               <property name="circle_color" stdset="0">
+                <string>#e8f8f7</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_avatar_actions">
+               <property name="spacing">
+                <number>10</number>
+               </property>
+               <item>
+                <widget class="QPushButton" name="btn_choose_avatar">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>42</height>
+                  </size>
+                 </property>
+                 <property name="font">
+                  <font>
+                   <pointsize>14</pointsize>
+                  </font>
+                 </property>
+                 <property name="cursor">
+                  <cursorShape>PointingHandCursor</cursorShape>
+                 </property>
+                 <property name="text">
+                  <string>Выбрать фото</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_capture_avatar">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>42</height>
+                  </size>
+                 </property>
+                 <property name="font">
+                  <font>
+                   <pointsize>14</pointsize>
+                  </font>
+                 </property>
+                 <property name="cursor">
+                  <cursorShape>PointingHandCursor</cursorShape>
+                 </property>
+                 <property name="text">
+                  <string>Сделать снимок</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_profile_first">
+               <property name="font">
+                <font>
+                 <pointsize>14</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Имя</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="lineEdit_profile_first">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>44</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>14</pointsize>
+                </font>
+               </property>
+               <property name="placeholderText">
+                <string>Введите имя</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_profile_last">
+               <property name="font">
+                <font>
+                 <pointsize>14</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Фамилия</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="lineEdit_profile_last">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>44</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>14</pointsize>
+                </font>
+               </property>
+               <property name="placeholderText">
+                <string>Введите фамилию</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="verticalSpacer_user_profile_fields">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>8</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btn_save_profile">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>48</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>14</pointsize>
+                </font>
+               </property>
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
+               <property name="text">
+                <string>Сохранить</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btn_switch_user">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>48</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>14</pointsize>
+                </font>
+               </property>
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
+               <property name="text">
+                <string>Сменить пользователя</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btn_delete_profile">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>44</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>16</pointsize>
+                </font>
+               </property>
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
+               <property name="text">
+                <string>Удалить пациента</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_user_profile_right">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_user_profile_bottom">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>16</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
-    <item>
-     <widget class="WavesBackground" name="widget_bg_waves" native="true"/>
-    </item>
-    <item>
-     <widget class="DotsBackground" name="widget_bg_points" native="true"/>
-    </item>
    </layout>
+   <widget class="WavesBackground" name="widget_bg_waves" native="true"/>
+   <widget class="DotsBackground" name="widget_bg_points" native="true"/>
   </widget>
  </widget>
  <customwidgets>
@@ -5100,6 +6221,26 @@ QScrollBar::sub-line:vertical {
    <class>CardIcon</class>
    <extends>QLabel</extends>
    <header>widgets.card_icon</header>
+  </customwidget>
+  <customwidget>
+   <class>UserAvatar</class>
+   <extends>QLabel</extends>
+   <header>widgets.user_avatar</header>
+  </customwidget>
+  <customwidget>
+   <class>HistoryLineChart</class>
+   <extends>QWidget</extends>
+   <header>widgets.history_charts</header>
+  </customwidget>
+  <customwidget>
+   <class>HistoryBarChart</class>
+   <extends>QWidget</extends>
+   <header>widgets.history_charts</header>
+  </customwidget>
+  <customwidget>
+   <class>ExampleImage</class>
+   <extends>QWidget</extends>
+   <header>widgets.example_image</header>
   </customwidget>
   <customwidget>
    <class>BlockContainer</class>

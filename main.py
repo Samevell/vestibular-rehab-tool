@@ -1,11 +1,12 @@
 import sys
 import traceback
+from datetime import datetime
+from pathlib import Path
 from PyQt5 import QtWidgets
 from window_ui import Ui_MainWindow
 from detect_thread import CameraThread
 from ex_2 import CameraThread2
 from ex_3 import CameraThread3
-# Импортируем заглушки для упражнений 4-9
 from ex_4 import CameraThread4
 from ex_5 import CameraThread5
 from ex_6 import CameraThread6
@@ -14,10 +15,12 @@ from ex_8 import CameraThread8
 from ex_9 import CameraThread9
 from PyQt5.QtGui import QImage, QPixmap
 import cv2
-from PyQt5.QtCore import Qt, QTimer, QSize, QSize
-from PyQt5.QtCore import QSettings
+from PyQt5.QtCore import Qt, QTimer, QSize, QEvent, QSettings
 from PyQt5 import QtGui
-from widgets.clickable_card import ClickableCard
+from widgets.history_period import HistoryPeriodPopup
+from widgets.user_avatar import UserAvatar
+from widgets.camera_capture import CameraCaptureDialog, SettingsPreviewThread
+from sound_manager import apply_audio_output, list_audio_outputs
 from style_loader import load_styles
 from analytics.recommend import recommend
 from analytics.ui_binding import (
@@ -27,33 +30,48 @@ from analytics.ui_binding import (
     read_exercise_params,
 )
 
-# Импортируем БД с предварительным подключением
-try:
-    from database_preconnected import DatabasePreconnected as Database
-    print("✅ Используется DatabasePreconnected")
-except ImportError as e:
-    print(f"❌ Не удалось импортировать database_preconnected: {e}")
-    # Резервный вариант - обычная БД
-    try:
-        from database_sync import DatabaseSync as Database
-        print("✅ Используется DatabaseSync (резервный вариант)")
-    except ImportError:
-        print("❌ Нет доступных модулей БД")
-        Database = None
+from app_paths import APP_TITLE, asset, crash_log_path, setup_runtime
+from storage import Database, avatar_file, save_avatar_pixmap
+from app_settings import (
+    KEY_AUDIO_OUTPUT,
+    KEY_AUTOPAUSE,
+    KEY_CAMERA,
+    KEY_FULLSCREEN,
+    KEY_MIRROR,
+    KEY_SKELETON,
+    KEY_VOLUME,
+    audio_output,
+    autopause_enabled,
+    camera_index,
+    list_cameras,
+    is_fullscreen,
+    is_mirror,
+    set_value,
+    show_skeleton,
+    volume,
+    volume_f,
+)
 
 # Перехватчик исключений
 def exception_hook(exctype, value, traceback_obj):
     """Перехват исключений для отображения в консоли"""
     print(f"🚨 Критическая ошибка: {exctype.__name__}: {value}")
     traceback.print_exception(exctype, value, traceback_obj)
-    
-    # Показываем сообщение об ошибке
+    try:
+        setup_runtime()
+        crash_log_path().write_text(
+            "".join(traceback.format_exception(exctype, value, traceback_obj)),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
+
     msg_box = QtWidgets.QMessageBox()
     msg_box.setIcon(QtWidgets.QMessageBox.Critical)
     msg_box.setWindowTitle("Критическая ошибка")
     msg_box.setText(f"Произошла ошибка:\n{exctype.__name__}: {value}")
     msg_box.exec_()
-    
+
     sys.exit(1)
 
 sys.excepthook = exception_hook
@@ -70,11 +88,7 @@ class MainWindow(QtWidgets.QMainWindow):
             
             # Инициализация базы данных ПЕРЕД созданием UI
             print("🔄 Инициализация базы данных...")
-            if Database:
-                self.db = Database()
-            else:
-                self.db = None
-                print("⚠️ База данных недоступна")
+            self.db = Database()
             
             self.current_user_id = None
 
@@ -93,37 +107,59 @@ class MainWindow(QtWidgets.QMainWindow):
             print("🔄 Инициализация пользовательского интерфейса...")
             self.ui = Ui_MainWindow()
             self.ui.setupUi(self)
+            self.setWindowTitle(APP_TITLE)
+            icon_path = asset("img/app.ico")
+            if Path(icon_path).is_file():
+                self.setWindowIcon(QtGui.QIcon(icon_path))
+            profile_shadow = QtWidgets.QGraphicsDropShadowEffect(self.ui.btn_current_user)
+            profile_shadow.setBlurRadius(18)
+            profile_shadow.setOffset(0, 1)
+            profile_shadow.setColor(QtGui.QColor(0, 0, 0, 28))
+            self.ui.btn_current_user.setGraphicsEffect(profile_shadow)
+            self.ui.btn_current_user._radius = 33
+            self.ui.label_current_user.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+            self.ui.label_user_avatar.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+            self.ui.verticalLayout_startup_create.setAlignment(
+                self.ui.icon_startup_create, Qt.AlignHCenter
+            )
+            self.ui.verticalLayout_user_profile_card.setAlignment(
+                self.ui.avatar_user_profile, Qt.AlignHCenter
+            )
+            for pill in (
+                self.ui.btn_user_profile_back,
+                self.ui.btn_back_settings,
+                self.ui.pushButton_3,
+            ):
+                shadow = QtWidgets.QGraphicsDropShadowEffect(pill)
+                shadow.setBlurRadius(18)
+                shadow.setOffset(0, 1)
+                shadow.setColor(QtGui.QColor(0, 0, 0, 28))
+                pill.setGraphicsEffect(shadow)
+            self.ui.listWidget_startup_users.setFocusPolicy(Qt.NoFocus)
+            self.ui.listWidget_startup_users.setMouseTracking(True)
+            self.ui.listWidget_startup_users.viewport().setMouseTracking(True)
+            self.ui.listWidget_startup_users.setCursor(Qt.PointingHandCursor)
+            self.ui.listWidget_startup_users.viewport().setCursor(Qt.PointingHandCursor)
+            self._hovered_startup_item = None
+            self.ui.listWidget_startup_users.itemEntered.connect(self._on_startup_user_hovered)
+            self.ui.listWidget_startup_users.viewport().installEventFilter(self)
+            self.ui.listWidget_startup_users.currentItemChanged.connect(
+                lambda _cur, _prev: self._refresh_startup_user_row_styles()
+            )
             self.ui.tableWidget.horizontalHeader().setSectionResizeMode(
                 QtWidgets.QHeaderView.Stretch
             )
-            self.ui.tableWidget.setStyleSheet("""
-            QTableWidget {
-                background: white;
-                border-radius: 10px;
-            }
-
-            QHeaderView::section {
-                background-color: #14d4c7;
-                color: white;
-                padding: 5px;
-                border: none;
-            }
-
-            QTableWidget::item {
-                padding: 5px;
-            }
-            """)
             self.ui.tableWidget.setEditTriggers(
                 QtWidgets.QAbstractItemView.NoEditTriggers
             )
+            self.ui.tableWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+            self.ui.tableWidget.setAlternatingRowColors(True)
+            self.ui.verticalLayout_9.setStretch(2, 2)
+            self.ui.verticalLayout_9.setStretch(3, 3)
             
-            # Проверяем состояние БД
-            if self.db and hasattr(self.db, 'is_connected') and not self.db.is_connected:
-                print("⚠️ Нет подключения к БД. Проверьте:")
-                print("   1. Запущен ли MySQL сервер")
-                print("   2. Правильный ли пароль ")
-                print("   3. Существует ли база 'trainer'")
-                print("   4. Доступен ли сервер на 127.0.0.1:3306")
+            if self.db and hasattr(self.db, "is_connected") and not self.db.is_connected:
+                print("⚠️ Не удалось открыть локальную базу SQLite.")
+                print(f"   Файл: {getattr(self.db, 'db_path', 'неизвестно')}")
             
             # Устанавливаем группы для карточек упражнений
             self.ui.card_excersise_apple.setGroup("trainers")
@@ -157,63 +193,61 @@ class MainWindow(QtWidgets.QMainWindow):
             
             self.ui.btn_start_ex.clicked.connect(self.start_current_exercise)
             self.ui.btn_back_video.clicked.connect(self.stop_camera)
+            self.ui.btn_back_video.raise_()
+            self.ui.stacked_widget_main.raise_()
+            self.ui.widget_bg_waves.sync_to_parent()
+            self.ui.widget_bg_points.sync_to_parent()
+            self.ui.stacked_widget_main.currentChanged.connect(self._sync_training_chrome)
+            self._sync_training_chrome()
             self.ui.card_exit_btn.clicked.connect(self.close)
-            self.ui.pushButton.clicked.connect(self.save_user_settings)
-            self.ui.btn_back_settings.clicked.connect(
-                lambda: self.ui.stacked_widget_main.setCurrentIndex(0)
+            self.ui.btn_back_settings.clicked.connect(self.open_main_page)
+            self.ui.btn_startup_continue.clicked.connect(self.continue_with_startup_user)
+            self.ui.btn_startup_new_user.clicked.connect(
+                lambda: self.show_startup_create(first_entry=False)
             )
-            self.ui.btn_delete_user.clicked.connect(self.delete_selected_user)
+            self.ui.btn_startup_create.clicked.connect(self.create_startup_user)
+            self.ui.btn_startup_back_to_select.clicked.connect(self.show_startup_select)
+            self.ui.listWidget_startup_users.itemDoubleClicked.connect(
+                lambda _item: self.continue_with_startup_user()
+            )
+            self.ui.lineEdit_startup_last_name.returnPressed.connect(
+                self.create_startup_user
+            )
             
             # Подключаем изменение выбора в комбобоксе
-            self.ui.comboBox_choose_user.currentIndexChanged.connect(self.on_user_selected)
+            self.ui.btn_current_user.clicked.connect(self.open_user_profile)
+            self.ui.btn_user_profile_back.clicked.connect(self.open_main_page)
+            self.ui.btn_switch_user.clicked.connect(self.show_startup_select)
+            self.ui.btn_choose_avatar.clicked.connect(self.choose_user_avatar)
+            self.ui.btn_capture_avatar.clicked.connect(self.capture_user_avatar)
+            self.ui.btn_save_profile.clicked.connect(self.save_user_profile)
+            self.ui.btn_delete_profile.clicked.connect(self.delete_selected_user)
+            self.ui.checkBox_fullscreen.toggled.connect(self._on_fullscreen_toggled)
+            self.ui.combo_camera.currentIndexChanged.connect(self._on_camera_changed)
+            self.ui.combo_audio_output.currentIndexChanged.connect(self._on_audio_output_changed)
+            self.ui.horizontalLayout_audio.setStretch(1, 1)
+            self.ui.checkBox_mirror.toggled.connect(self._on_mirror_toggled)
+            self.ui.slider_volume.valueChanged.connect(self._on_volume_changed)
+            self.ui.checkBox_skeleton.toggled.connect(self._on_skeleton_toggled)
+            self.ui.checkBox_autopause.toggled.connect(self._on_autopause_toggled)
+
+            self._preview_thread = None
+            self._preview_gen = 0
+            self._settings_loading = False
+            QTimer.singleShot(0, self._apply_fullscreen)
             
             # Настраиваем таблицу истории
             self.setup_history_table()
+            self._make_window_resizable()
             self.setup_recommendation_buttons()
             
-            self.ui.stacked_widget_main.setCurrentWidget(self.ui.page_main)
             self.ui.stacked_widget_ex_choose.setCurrentWidget(self.ui.page_emty)
 
-            # Загружаем пользователей в комбобокс
             self.load_users()
+            self.apply_startup_flow()
             
-            # Загружаем изображения
             print("🔄 Загрузка изображений...")
-            try:
-                self.original_pixmap = QPixmap("./img/eex1.png")
-                self.ui.lable_apple_example_img.setAlignment(Qt.AlignCenter)
-                self.ui.lable_apple_example_img.setScaledContents(False)
-                
-                self.original_pixmap_ex2 = QPixmap("./img/eex2.png")
-                self.ui.lable_apple_example_img_2.setAlignment(Qt.AlignCenter)
-                self.ui.lable_apple_example_img_2.setScaledContents(False)
-
-                self.original_pixmap_ex3 = QPixmap("./img/eex3.png")
-                self.ui.lable_apple_example_img_3.setAlignment(Qt.AlignCenter)
-                self.ui.lable_apple_example_img_3.setScaledContents(False)
-                
-                # Заглушки для изображений упражнений 4-9
-                self.original_pixmap_ex4 = QPixmap("./img/eex4.png") if QPixmap("./img/eex4.png") else QPixmap()
-                self.ui.lable_apple_example_img_4.setAlignment(Qt.AlignCenter)
-                self.ui.lable_apple_example_img_4.setScaledContents(False)
-                self.original_pixmap_ex5 = QPixmap("./img/eex5.png") if QPixmap("./img/eex5.png") else QPixmap()
-                self.ui.lable_apple_example_img_5.setAlignment(Qt.AlignCenter)
-                self.ui.lable_apple_example_img_5.setScaledContents(False)
-                self.original_pixmap_ex6 = QPixmap("./img/eex6.png") if QPixmap("./img/eex6.png") else QPixmap()
-                self.ui.lable_apple_example_img_6.setAlignment(Qt.AlignCenter)
-                self.ui.lable_apple_example_img_6.setScaledContents(False)
-                self.original_pixmap_ex7 = QPixmap("./img/eex7.png") if QPixmap("./img/eex7.png") else QPixmap()
-                self.ui.lable_apple_example_img_7.setAlignment(Qt.AlignCenter)
-                self.ui.lable_apple_example_img_7.setScaledContents(False)
-                self.original_pixmap_ex8 = QPixmap("./img/eex8.png") if QPixmap("./img/eex8.png") else QPixmap()
-                self.ui.lable_apple_example_img_8.setAlignment(Qt.AlignCenter)
-                self.ui.lable_apple_example_img_8.setScaledContents(False)
-                self.original_pixmap_ex9 = QPixmap("./img/eex9.png") if QPixmap("./img/eex9.png") else QPixmap()
-                self.ui.lable_apple_example_img_9.setAlignment(Qt.AlignCenter)
-                self.ui.lable_apple_example_img_9.setScaledContents(False)
-                
-            except Exception as e:
-                print(f"⚠️ Ошибка загрузки изображений: {e}")
+            self._setup_example_images()
             
             # Устанавливаем начальные значения
             self.ui.spinBox_apple_count.setValue(12)
@@ -222,10 +256,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.spinBox_apple_second_2.setValue(4)
             self.ui.spinBox_apple_count_3.setValue(5)
             
-            # Переменные для хранения результатов упражнений
-            self.exercise_score = 0
-            self.exercise_type = None
-
             self.current_exercise = None
             
             print("✅ MainWindow инициализирован успешно")
@@ -247,9 +277,9 @@ class MainWindow(QtWidgets.QMainWindow):
         font = QtGui.QFont()
         font.setPointSize(15)
         buttons_icons = (
-            (self.ui.btn_save_baseline, "./img/bookmark_icon.svg"),
-            (self.ui.btn_apply_recommendation, "./img/sparkles_icon.svg"),
-            (self.ui.btn_restore_baseline, "./img/reset_icon.svg"),
+            (self.ui.btn_save_baseline, asset("img/bookmark_icon.svg")),
+            (self.ui.btn_apply_recommendation, asset("img/sparkles_icon.svg")),
+            (self.ui.btn_restore_baseline, asset("img/reset_icon.svg")),
         )
         for btn, icon_path in buttons_icons:
             btn.setFont(font)
@@ -370,91 +400,361 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
     def setup_history_table(self):
-        """Настройка таблицы истории тренировок (БЕЗ ID)"""
-        # Устанавливаем заголовки столбцов
+        """Настройка таблицы и фильтров истории."""
         headers = [
+            "Дата",
             "Упражнение",
-            "Дата и время",
-            "Всего яблок",
             "Поймано",
             "Успешность",
-            "Сложность",
             "Фон",
-            "Коэффициент",
-            "Балл"
+            "Балл",
         ]
-        
         self.ui.tableWidget.setColumnCount(len(headers))
         self.ui.tableWidget.setHorizontalHeaderLabels(headers)
-        
-        # Настройка ширины столбцов
         self.ui.tableWidget.horizontalHeader().setStretchLastSection(True)
-        
-        # Настройка выравнивания заголовков
+        self.ui.tableWidget.verticalHeader().setVisible(False)
+        self.ui.tableWidget.setShowGrid(False)
+        self.ui.tableWidget.setSortingEnabled(False)
+        header = self.ui.tableWidget.horizontalHeader()
+        header.setSectionsClickable(True)
+        header.setSortIndicatorShown(False)
+        header.setHighlightSections(False)
+        header.setCursor(Qt.PointingHandCursor)
+        header.sectionClicked.connect(self._on_history_header_clicked)
         for i in range(len(headers)):
-            self.ui.tableWidget.horizontalHeaderItem(i).setTextAlignment(Qt.AlignCenter)
-        
-        # Настройка ширины столбцов
-        self.ui.tableWidget.setColumnWidth(0, 120)  # Упражнение
-        self.ui.tableWidget.setColumnWidth(1, 150)  # Дата и время
-        self.ui.tableWidget.setColumnWidth(2, 150)  # Пользователь
-        self.ui.tableWidget.setColumnWidth(3, 100)  # Всего яблок
-        self.ui.tableWidget.setColumnWidth(4, 100)  # Поймано
-        self.ui.tableWidget.setColumnWidth(5, 100)  # Успешность
-        self.ui.tableWidget.setColumnWidth(6, 100)  # Сложность
-        self.ui.tableWidget.setColumnWidth(7, 100)  # Фон
-        self.ui.tableWidget.setColumnWidth(8, 100)  # Коэффициент
+            item = self.ui.tableWidget.horizontalHeaderItem(i)
+            if item is not None:
+                item.setTextAlignment(Qt.AlignCenter)
 
-    def load_users(self):
-        """Загрузка списка пользователей в комбобокс"""
+        self._history_sort_column = None
+        self._history_sort_desc = True
+
+        self.ui.combo_history_exercise.blockSignals(True)
+        self.ui.combo_history_exercise.clear()
+        self.ui.combo_history_exercise.addItem("Все упражнения", 0)
+        for number in range(1, 10):
+            self.ui.combo_history_exercise.addItem(f"Упражнение {number}", number)
+        self.ui.combo_history_exercise.blockSignals(False)
+
+        self._history_period = (None, None)
+        self._history_period_popup = HistoryPeriodPopup(self)
+        self._history_period_popup.periodChanged.connect(self._on_history_period_changed)
+        self.ui.btn_history_period.clicked.connect(self._open_history_period)
+        self._update_history_period_button()
+
+        self.ui.combo_history_exercise.currentIndexChanged.connect(self._refresh_history_view)
+        self.ui.chart_history_success.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
+        self.ui.chart_history_exercises.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
+        self._history_records = []
+
+    def _all_users(self):
         if self.db is None:
-            return
-        
-        self.ui.comboBox_choose_user.clear()
-        
-        # Добавляем опцию "Выберите пользователя"
-        self.ui.comboBox_choose_user.addItem("-- Выберите пользователя --", None)
-        
-        users = self.db.get_all_users()
-        
-        for user in users:
-            text = f"{user['first_name']} {user['last_name']}"
-            self.ui.comboBox_choose_user.addItem(text, user['id'])
-        
-        # Восстанавливаем выбранного пользователя
-        if self.current_user_id:
-            index = self.ui.comboBox_choose_user.findData(self.current_user_id)
-            if index > 0:  # не выбираем "-- Выберите пользователя --"
-                self.ui.comboBox_choose_user.setCurrentIndex(index)
-                user_name = self.ui.comboBox_choose_user.currentText()
-                self.ui.label_16.setText(f"Пользователь: {user_name}")
-    
-    def on_user_selected(self, index):
-        """Обработка выбора пользователя из комбобокса"""
-        user_id = self.ui.comboBox_choose_user.currentData()
-        
+            return []
+        return self.db.get_all_users()
+
+    def _user_id_exists(self, user_id):
+        if not user_id:
+            return False
+        return any(user["id"] == user_id for user in self._all_users())
+
+    def _current_user_name(self):
+        for user in self._all_users():
+            if user["id"] == self.current_user_id:
+                return f"{user['first_name']} {user['last_name']}"
+        return ""
+
+    def _set_current_user(self, user_id, display_name):
+        self.current_user_id = user_id
         if user_id:
-            self.current_user_id = user_id
             self.settings.setValue("current_user_id", user_id)
-            
-            user_name = self.ui.comboBox_choose_user.currentText()
-            print(f"👤 Выбран пользователь: {user_name} (ID={user_id})")
-            self.ui.label_16.setText(f"Пользователь: {user_name}")
+            self.ui.label_current_user.setText(display_name)
         else:
-            # Пользователь не выбран (выбрана опция "-- Выберите пользователя --")
+            self.settings.setValue("current_user_id", None)
+            self.ui.label_current_user.setText("Не выбран")
+
+    def _apply_user_avatar(self, user_id=None):
+        user_id = user_id if user_id is not None else self.current_user_id
+        path = avatar_file(user_id) if user_id else None
+        photo = str(path) if path is not None and path.exists() else ""
+        self.ui.label_user_avatar.setPhotoPath(photo)
+        self.ui.avatar_user_profile.setPhotoPath(photo)
+
+    def open_user_profile(self):
+        if not self._user_id_exists(self.current_user_id):
+            self.apply_startup_flow()
+            return
+        user = self.db.get_user(self.current_user_id)
+        if not user:
+            self.apply_startup_flow()
+            return
+        self.ui.lineEdit_profile_first.setText(user["first_name"])
+        self.ui.lineEdit_profile_last.setText(user["last_name"])
+        self._apply_user_avatar(self.current_user_id)
+        self.ui.stacked_widget_main.setCurrentWidget(self.ui.page_user_profile)
+
+    def save_user_profile(self):
+        if not self.current_user_id or self.db is None:
+            return
+        first_name = self.ui.lineEdit_profile_first.text().strip()
+        last_name = self.ui.lineEdit_profile_last.text().strip()
+        if not first_name or not last_name:
+            QtWidgets.QMessageBox.warning(self, "Ошибка", "Введите имя и фамилию!")
+            return
+        if not self.db.update_user(self.current_user_id, first_name, last_name):
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Ошибка",
+                "Не удалось сохранить. Возможно, пациент с таким именем уже есть.",
+            )
+            return
+        self._set_current_user(self.current_user_id, f"{first_name} {last_name}")
+        self.load_users()
+        self.open_main_page()
+
+    def choose_user_avatar(self):
+        if not self.current_user_id:
+            return
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            "Выберите фото",
+            "",
+            "Изображения (*.png *.jpg *.jpeg *.bmp *.webp)",
+        )
+        if not path:
+            return
+        pixmap = QPixmap(path)
+        if pixmap.isNull():
+            QtWidgets.QMessageBox.warning(self, "Ошибка", "Не удалось открыть изображение.")
+            return
+        save_avatar_pixmap(self.current_user_id, pixmap)
+        self._apply_user_avatar(self.current_user_id)
+
+    def capture_user_avatar(self):
+        if not self.current_user_id:
+            return
+        dialog = CameraCaptureDialog(self)
+        if dialog.exec_() != QtWidgets.QDialog.Accepted:
+            return
+        if dialog.result_pixmap is None or dialog.result_pixmap.isNull():
+            QtWidgets.QMessageBox.warning(self, "Ошибка", "Снимок не получен.")
+            return
+        save_avatar_pixmap(self.current_user_id, dialog.result_pixmap)
+        self._apply_user_avatar(self.current_user_id)
+
+    def apply_startup_flow(self):
+        """Стартовый экран: создание при первом входе, иначе прошлый пациент."""
+        users = self._all_users()
+        if not users:
             self.current_user_id = None
             self.settings.setValue("current_user_id", None)
-            self.ui.label_16.setText("Пользователь: не выбран")
+            self.show_startup_create(first_entry=True)
+            return
+
+        if self._user_id_exists(self.current_user_id):
+            self.load_users()
+            self.ui.stacked_widget_main.setCurrentWidget(self.ui.page_main)
+            return
+
+        self.current_user_id = None
+        self.settings.setValue("current_user_id", None)
+        self.show_startup_select()
+
+    def _style_startup_user_row(self, row, selected, hovered=False):
+        if selected:
+            row.setStyleSheet(
+                "#startup_user_row {"
+                "  background: #E8F8F7;"
+                "  border: 1px solid #1dbeb7;"
+                "  border-radius: 14px;"
+                "}"
+                "#startup_user_row_name {"
+                "  background: transparent;"
+                "  color: #2C3E50;"
+                "  font-size: 18px;"
+                "  font-weight: 600;"
+                "}"
+            )
+        elif hovered:
+            row.setStyleSheet(
+                "#startup_user_row {"
+                "  background: #F3FBFA;"
+                "  border: 1px solid #1dbeb7;"
+                "  border-radius: 14px;"
+                "}"
+                "#startup_user_row_name {"
+                "  background: transparent;"
+                "  color: #2C3E50;"
+                "  font-size: 18px;"
+                "  font-weight: 400;"
+                "}"
+            )
+        else:
+            row.setStyleSheet(
+                "#startup_user_row {"
+                "  background: #FFFFFF;"
+                "  border: 1px solid #E8EEF2;"
+                "  border-radius: 14px;"
+                "}"
+                "#startup_user_row_name {"
+                "  background: transparent;"
+                "  color: #2C3E50;"
+                "  font-size: 18px;"
+                "  font-weight: 400;"
+                "}"
+            )
+
+    def _build_startup_user_row(self, display_name, user_id=None):
+        row = QtWidgets.QWidget()
+        row.setObjectName("startup_user_row")
+        row.setAttribute(Qt.WA_StyledBackground, True)
+        row.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        layout = QtWidgets.QHBoxLayout(row)
+        layout.setContentsMargins(16, 10, 21, 10)
+        layout.setSpacing(16)
+
+        avatar = UserAvatar(row)
+        avatar.setFixedSize(52, 52)
+        avatar.setSvgFile(asset("img/user_icon.svg"))
+        avatar.setMainColor("#1dbeb7")
+        avatar.setCircleColor("#e8f8f7")
+        if user_id:
+            path = avatar_file(user_id)
+            if path.exists():
+                avatar.setPhotoPath(str(path))
+        avatar.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+
+        name = QtWidgets.QLabel(display_name, row)
+        name.setObjectName("startup_user_row_name")
+        name.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+
+        layout.addWidget(avatar)
+        layout.addWidget(name, 1)
+        self._style_startup_user_row(row, False)
+        return row
+
+    def _refresh_startup_user_row_styles(self):
+        list_widget = self.ui.listWidget_startup_users
+        current = list_widget.currentItem()
+        hovered = getattr(self, "_hovered_startup_item", None)
+        for index in range(list_widget.count()):
+            item = list_widget.item(index)
+            widget = list_widget.itemWidget(item)
+            if widget is not None:
+                self._style_startup_user_row(
+                    widget, item is current, hovered=(item is hovered and item is not current)
+                )
+
+    def _on_startup_user_hovered(self, item):
+        self._hovered_startup_item = item
+        self._refresh_startup_user_row_styles()
+
+    def eventFilter(self, obj, event):
+        viewport = getattr(self.ui, "listWidget_startup_users", None)
+        viewport = viewport.viewport() if viewport is not None else None
+        if obj is viewport and event.type() == QEvent.Leave:
+            self._hovered_startup_item = None
+            self._refresh_startup_user_row_styles()
+        return super().eventFilter(obj, event)
+
+    def show_startup_select(self):
+        self._stop_settings_preview()
+        users = self._all_users()
+        if not users:
+            self.show_startup_create(first_entry=True)
+            return
+
+        self.ui.listWidget_startup_users.clear()
+        self._hovered_startup_item = None
+        selected_row = 0
+        for index, user in enumerate(users):
+            display_name = f"{user['first_name']} {user['last_name']}"
+            item = QtWidgets.QListWidgetItem()
+            item.setData(Qt.UserRole, user["id"])
+            item.setData(int(Qt.UserRole) + 1, display_name)
+            item.setSizeHint(QSize(0, 75))
+            self.ui.listWidget_startup_users.addItem(item)
+            self.ui.listWidget_startup_users.setItemWidget(
+                item, self._build_startup_user_row(display_name, user["id"])
+            )
+            if self.current_user_id and user["id"] == self.current_user_id:
+                selected_row = index
+
+        if self.ui.listWidget_startup_users.count() > 0:
+            self.ui.listWidget_startup_users.setCurrentRow(selected_row)
+            self._refresh_startup_user_row_styles()
+
+        self.ui.stacked_startup.setCurrentWidget(self.ui.page_startup_select)
+        self.ui.stacked_widget_main.setCurrentWidget(self.ui.page_startup)
+
+    def show_startup_create(self, first_entry=False):
+        users = self._all_users()
+        is_first = first_entry or not users
+        self.ui.label_startup_create_title.setText(
+            "Первый вход" if is_first else "Новый пациент"
+        )
+        self.ui.btn_startup_back_to_select.setVisible(not is_first)
+        self.ui.stacked_startup.setCurrentWidget(self.ui.page_startup_create)
+        self.ui.stacked_widget_main.setCurrentWidget(self.ui.page_startup)
+        self.ui.lineEdit_startup_first_name.setFocus()
+
+    def continue_with_startup_user(self):
+        item = self.ui.listWidget_startup_users.currentItem()
+        if item is None:
+            QtWidgets.QMessageBox.warning(
+                self, "Пациент не выбран", "Выберите пациента из списка."
+            )
+            return
+        user_id = item.data(Qt.UserRole)
+        display_name = item.data(int(Qt.UserRole) + 1) or "Пациент"
+        self._set_current_user(user_id, display_name)
+        self.load_users()
+        self.ui.stacked_widget_main.setCurrentWidget(self.ui.page_main)
+
+    def create_startup_user(self):
+        if self.db is None:
+            QtWidgets.QMessageBox.warning(self, "Ошибка", "База данных недоступна!")
+            return
+
+        first_name = self.ui.lineEdit_startup_first_name.text().strip()
+        last_name = self.ui.lineEdit_startup_last_name.text().strip()
+        if not first_name or not last_name:
+            QtWidgets.QMessageBox.warning(self, "Ошибка", "Введите имя и фамилию!")
+            return
+
+        user_id = self.db.get_or_create_user(first_name, last_name)
+        if user_id is None:
+            QtWidgets.QMessageBox.warning(
+                self, "Ошибка", "Не удалось сохранить пациента."
+            )
+            return
+
+        self.ui.lineEdit_startup_first_name.clear()
+        self.ui.lineEdit_startup_last_name.clear()
+        self._set_current_user(user_id, f"{first_name} {last_name}")
+        self.load_users()
+        self.ui.stacked_widget_main.setCurrentWidget(self.ui.page_main)
+
+    def load_users(self):
+        """Обновить имя текущего пациента в шапке."""
+        if self.db is None:
+            return
+        name = self._current_user_name()
+        self.ui.label_current_user.setText(name or "Не выбран")
+        self._apply_user_avatar(self.current_user_id)
+
 
     def delete_selected_user(self):
-        """Удаление выбранного пользователя"""
-        user_id = self.ui.comboBox_choose_user.currentData()
+        """Удаление текущего пациента"""
+        user_id = self.current_user_id
+        user_name = self._current_user_name()
         
         if not user_id:
             QtWidgets.QMessageBox.warning(self, "Ошибка", "Выберите пользователя для удаления")
             return
-        
-        user_name = self.ui.comboBox_choose_user.currentText()
         
         # Подтверждение
         reply = QtWidgets.QMessageBox.question(
@@ -477,110 +777,15 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.current_user_id == user_id:
             self.current_user_id = None
             self.settings.setValue("current_user_id", None)
-            self.ui.label_16.setText("Пользователь: не выбран")
+            self.ui.label_current_user.setText("Не выбран")
         
         # Перезагружаем комбобокс
         self.load_users()
         
         QtWidgets.QMessageBox.information(self, "Успех", f"Пользователь {user_name} удален")
+        if not self._user_id_exists(self.current_user_id):
+            self.apply_startup_flow()
 
-    def on_button_clicked(self, button):
-        for btn in self.ui.buttonGroup.buttons():
-            btn.setStyleSheet("")  # сбрасываем стиль
-        button.setStyleSheet("background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #cfa8ff,stop: 1 #8e6ecb);")
-
-    def save_user_settings(self):
-        """Сохранение пользователя и переход в главное меню"""
-        print("🔄 Нажата кнопка 'Сохранить'")
-        
-        try:
-            if self.db is None:
-                QtWidgets.QMessageBox.warning(self, "Ошибка", "База данных недоступна!")
-                return
-                
-            first_name = self.ui.lineEdit_UserName.text().strip()
-            last_name = self.ui.lineEdit_UserLastName.text().strip()
-            
-            print(f"📝 Введенные данные: {first_name} {last_name}")
-            
-            if not first_name or not last_name:
-                QtWidgets.QMessageBox.warning(self, "Ошибка", "Введите имя и фамилию!")
-                return
-            
-            # Отключаем кнопку на время операции
-            self.ui.pushButton.setEnabled(False)
-            self.ui.pushButton.setText("Сохранение...")
-            
-            # Показываем сообщение о сохранении
-            saving_msg = QtWidgets.QMessageBox()
-            saving_msg.setWindowTitle("Сохранение")
-            saving_msg.setText("Сохранение пользователя...")
-            saving_msg.setStandardButtons(QtWidgets.QMessageBox.NoButton)
-            saving_msg.show()
-            
-            # Обновляем UI
-            QtWidgets.QApplication.processEvents()
-            
-            # Синхронное сохранение пользователя
-            try:
-                user_id = self.db.get_or_create_user(first_name, last_name)
-            except Exception as e:
-                user_id = None
-                print(f"❌ Исключение при сохранении пользователя: {e}")
-            
-            # Закрываем сообщение
-            saving_msg.close()
-            
-            # Восстанавливаем кнопку
-            self.ui.pushButton.setEnabled(True)
-            self.ui.pushButton.setText("Сохранить")
-            
-            if user_id is None:
-                QtWidgets.QMessageBox.warning(
-                    self, 
-                    "Ошибка", 
-                    "Не удалось сохранить пользователя. Проверьте подключение к базе данных."
-                )
-                return
-            
-            self.current_user_id = user_id
-            self.settings.setValue("current_user_id", user_id)
-            
-            # Очищаем поля
-            self.ui.lineEdit_UserName.clear()
-            self.ui.lineEdit_UserLastName.clear()
-            
-            # Перезагружаем пользователей в комбобокс
-            self.load_users()
-            
-            # Обновляем label с именем пользователя
-            self.ui.label_16.setText(f"Пользователь: {first_name} {last_name}")
-            
-            # Переходим в главное меню
-            self.open_main_page()
-            
-            QtWidgets.QMessageBox.information(
-                self, 
-                "Успех", 
-                f"Данные сохранены!\nПользователь: {first_name} {last_name}\nID: {user_id}"
-            )
-            
-            print("✅ Пользователь успешно сохранен")
-            
-        except Exception as e:
-            print(f"❌ Ошибка в save_user_settings: {e}")
-            traceback.print_exc()
-            
-            # Восстанавливаем кнопку в любом случае
-            self.ui.pushButton.setEnabled(True)
-            self.ui.pushButton.setText("Сохранить")
-            
-            QtWidgets.QMessageBox.critical(
-                self, 
-                "Ошибка", 
-                f"Произошла ошибка:\n{str(e)}"
-            )
-    
     def calculate_coefficient_ex1_ex2(self, apples_count, seconds_per_apple, caught_apples):
         """
         Расчет коэффициента для упражнений 1 и 2
@@ -675,27 +880,6 @@ class MainWindow(QtWidgets.QMainWindow):
         }
         speed_factor = speed_multipliers.get(speed, 1.0)
         coefficient = success_rate * speed_factor
-        coefficient = max(0, min(coefficient, 2.0))
-        
-        return round(coefficient, 2)
-    
-    def calculate_coefficient_ex6(self, objects_count, bg_speed, caught_objects):
-        """Расчет коэффициента для упражнения 6"""
-        if objects_count == 0:
-            return 0
-        
-        success_rate = caught_objects / objects_count
-        
-        # Коэффициент скорости фона
-        bg_multipliers = {
-            'Выкл': 1.0,
-            'Медленно': 1.2,
-            'Средне': 1.5,
-            'Быстро': 2.0
-        }
-        
-        bg_factor = bg_multipliers.get(bg_speed, 1.0)
-        coefficient = success_rate * bg_factor
         coefficient = max(0, min(coefficient, 2.0))
         
         return round(coefficient, 2)
@@ -803,8 +987,6 @@ class MainWindow(QtWidgets.QMainWindow):
             'sound': sound
         }
         
-        self.exercise_score = 0
-        
         user_id = self.current_user_id if self.current_user_id is not None else 0
         self.thread = CameraThread(difficulty, seconds, background, sound, user_id=user_id)
         self.thread.frame_signal.connect(self.update_frame)
@@ -824,8 +1006,6 @@ class MainWindow(QtWidgets.QMainWindow):
             'background': background
         }
         
-        self.exercise_score = 0
-        
         user_id = self.current_user_id if self.current_user_id is not None else 0
         self.thread = CameraThread2(difficulty, seconds, background, user_id=user_id)
         self.thread.frame_signal.connect(self.update_frame)
@@ -844,8 +1024,6 @@ class MainWindow(QtWidgets.QMainWindow):
             'speed': speed,
             'background': background
         }
-        
-        self.exercise_score = 0
         
         user_id = self.current_user_id if self.current_user_id is not None else 0
         self.thread = CameraThread3(difficulty, speed, background, user_id=user_id)
@@ -869,8 +1047,6 @@ class MainWindow(QtWidgets.QMainWindow):
             'background': background
         }
         
-        self.exercise_score = 0
-        
         user_id = self.current_user_id if self.current_user_id is not None else 0
         self.thread = CameraThread4(objects_count, time_sec, speed, background, user_id=user_id)
         self.thread.frame_signal.connect(self.update_frame)
@@ -893,8 +1069,6 @@ class MainWindow(QtWidgets.QMainWindow):
             'background': background
         }
         
-        self.exercise_score = 0
-        
         user_id = self.current_user_id if self.current_user_id is not None else 0
         self.thread = CameraThread5(objects_count, time_sec, speed, background, user_id=user_id)
         self.thread.frame_signal.connect(self.update_frame)
@@ -915,8 +1089,6 @@ class MainWindow(QtWidgets.QMainWindow):
             'time_sec': time_sec,
             'background': background
         }
-        
-        self.exercise_score = 0
         
         user_id = self.current_user_id if self.current_user_id is not None else 0
         self.thread = CameraThread6(objects_count, time_sec, background, user_id=user_id)
@@ -941,8 +1113,6 @@ class MainWindow(QtWidgets.QMainWindow):
             'background': background
         }
         
-        self.exercise_score = 0
-        
         user_id = self.current_user_id if self.current_user_id is not None else 0
         self.thread = CameraThread7(objects_count, time_sec, neck_range, background, user_id=user_id)
         self.thread.frame_signal.connect(self.update_frame)
@@ -966,8 +1136,6 @@ class MainWindow(QtWidgets.QMainWindow):
             'speed': speed,
             'background': background
         }
-        
-        self.exercise_score = 0
         
         user_id = self.current_user_id if self.current_user_id is not None else 0
         self.thread = CameraThread8(
@@ -994,8 +1162,6 @@ class MainWindow(QtWidgets.QMainWindow):
             'speed': speed,
             'background': background
         }
-        
-        self.exercise_score = 0
         
         user_id = self.current_user_id if self.current_user_id is not None else 0
         self.thread = CameraThread9(
@@ -1232,18 +1398,202 @@ class MainWindow(QtWidgets.QMainWindow):
     
     def open_page_choose_ex(self):
         self.ui.stacked_widget_main.setCurrentWidget(self.ui.page_choose_ex)
+        self._restore_selected_exercise()
+
+    def _exercise_choice_widgets(self):
+        return {
+            "ex1": (self.ui.page_apples, self.ui.card_excersise_apple),
+            "ex2": (self.ui.page_ex2, self.ui.card_excersise_apple_2),
+            "ex3": (self.ui.page_ex3, self.ui.card_excersise_apple_3),
+            "ex4": (self.ui.page_ex4, self.ui.card_excersise_apple_4),
+            "ex5": (self.ui.page_ex5, self.ui.card_excersise_apple_5),
+            "ex6": (self.ui.page_ex6, self.ui.card_excersise_apple_6),
+            "ex7": (self.ui.page_ex7, self.ui.card_excersise_apple_7),
+            "ex8": (self.ui.page_ex8, self.ui.card_excersise_apple_8),
+            "ex9": (self.ui.page_ex9, self.ui.card_excersise_apple_9),
+        }
+
+    def _restore_selected_exercise(self):
+        choice = self._exercise_choice_widgets().get(self.current_exercise)
+        if choice is None:
+            return
+        page, card = choice
+        self.ui.stacked_widget_ex_choose.setCurrentWidget(page)
+        card.select()
     
+    def _apply_fullscreen(self):
+        if is_fullscreen():
+            self.showFullScreen()
+        elif self.isFullScreen():
+            self.showNormal()
+            self.showMaximized()
+
+    def _load_settings_ui(self):
+        self._settings_loading = True
+        self.ui.checkBox_fullscreen.setChecked(is_fullscreen())
+        self.ui.checkBox_mirror.setChecked(is_mirror())
+        self.ui.slider_volume.setValue(volume())
+        self.ui.label_volume_value.setText(f"{volume()}%")
+        self.ui.checkBox_skeleton.setChecked(show_skeleton())
+        self.ui.checkBox_autopause.setChecked(autopause_enabled())
+        current = camera_index()
+        cameras = list_cameras()
+        self.ui.combo_camera.clear()
+        if not cameras:
+            self.ui.combo_camera.addItem("Камеры не найдены", None)
+            self.ui.combo_camera.setEnabled(False)
+        else:
+            self.ui.combo_camera.setEnabled(True)
+            selected = 0
+            available = []
+            for row, (index, name) in enumerate(cameras):
+                self.ui.combo_camera.addItem(name, index)
+                available.append(index)
+                if index == current:
+                    selected = row
+            self.ui.combo_camera.setCurrentIndex(selected)
+            if current not in available:
+                set_value(KEY_CAMERA, int(available[0]))
+        self._populate_audio_outputs()
+        self._settings_loading = False
+        apply_audio_output(audio_output())
+
+    def _start_settings_preview(self):
+        self._stop_settings_preview()
+        index = self.ui.combo_camera.currentData()
+        if index is None:
+            self.ui.label_camera_preview.setPixmap(QPixmap())
+            self.ui.label_camera_preview.setText("Камера не найдена")
+            return
+        self.ui.label_camera_preview.setPixmap(QPixmap())
+        self.ui.label_camera_preview.setText("Подключение камеры...")
+        self._preview_gen += 1
+        gen = self._preview_gen
+        thread = SettingsPreviewThread(int(index), self)
+        thread.frame_ready.connect(
+            lambda image, current=gen: self._on_preview_frame(image, current)
+        )
+        thread.status.connect(
+            lambda text, current=gen: self._on_preview_status(text, current)
+        )
+        self._preview_thread = thread
+        thread.start()
+
+    def _stop_settings_preview(self):
+        thread = getattr(self, "_preview_thread", None)
+        if thread is None:
+            return
+        self._preview_thread = None
+        self._preview_gen += 1
+        try:
+            thread.frame_ready.disconnect()
+            thread.status.disconnect()
+        except TypeError:
+            pass
+        thread.stop()
+        thread.finished.connect(thread.deleteLater)
+        if thread.isRunning():
+            thread.wait(50)
+
+    def _on_preview_frame(self, image, gen):
+        if gen != getattr(self, "_preview_gen", 0):
+            return
+        pixmap = QPixmap.fromImage(image).scaled(
+            self.ui.label_camera_preview.size(),
+            Qt.KeepAspectRatio,
+            Qt.SmoothTransformation,
+        )
+        self.ui.label_camera_preview.setPixmap(pixmap)
+
+    def _on_preview_status(self, text, gen):
+        if gen != getattr(self, "_preview_gen", 0):
+            return
+        if text:
+            self.ui.label_camera_preview.setPixmap(QPixmap())
+            self.ui.label_camera_preview.setText(text)
+
+    def _on_fullscreen_toggled(self, checked):
+        if self._settings_loading:
+            return
+        set_value(KEY_FULLSCREEN, bool(checked))
+        self._apply_fullscreen()
+
+    def _on_camera_changed(self, _index):
+        if self._settings_loading:
+            return
+        cam = self.ui.combo_camera.currentData()
+        if cam is None:
+            return
+        set_value(KEY_CAMERA, int(cam))
+        self._start_settings_preview()
+
+    def _populate_audio_outputs(self):
+        current = audio_output()
+        self.ui.combo_audio_output.clear()
+        selected = 0
+        for row, (label, device_id) in enumerate(list_audio_outputs()):
+            self.ui.combo_audio_output.addItem(label, device_id)
+            if device_id == current:
+                selected = row
+        if current and selected == 0:
+            self.ui.combo_audio_output.addItem(current, current)
+            selected = self.ui.combo_audio_output.count() - 1
+        self.ui.combo_audio_output.setCurrentIndex(selected)
+
+    def _on_audio_output_changed(self, _index):
+        if self._settings_loading:
+            return
+        device_id = self.ui.combo_audio_output.currentData()
+        if device_id is None:
+            return
+        set_value(KEY_AUDIO_OUTPUT, str(device_id))
+        apply_audio_output(str(device_id))
+
+    def _on_mirror_toggled(self, checked):
+        if self._settings_loading:
+            return
+        set_value(KEY_MIRROR, bool(checked))
+
+    def _on_volume_changed(self, value):
+        self.ui.label_volume_value.setText(f"{value}%")
+        if self._settings_loading:
+            return
+        set_value(KEY_VOLUME, int(value))
+        try:
+            import pygame
+            if pygame.mixer.get_init():
+                pygame.mixer.music.set_volume(volume_f())
+        except Exception:
+            pass
+
+    def _on_skeleton_toggled(self, checked):
+        if self._settings_loading:
+            return
+        set_value(KEY_SKELETON, bool(checked))
+
+    def _on_autopause_toggled(self, checked):
+        if self._settings_loading:
+            return
+        set_value(KEY_AUTOPAUSE, bool(checked))
+
     def open_page_settings(self):
+        self._load_settings_ui()
+        self.ui.label_camera_preview.setPixmap(QPixmap())
+        self.ui.label_camera_preview.setText("Подключение камеры...")
         self.ui.stacked_widget_main.setCurrentWidget(self.ui.page_settings)
+        QTimer.singleShot(0, self._start_settings_preview)
 
     def open_main_page(self):
+        self._stop_settings_preview()
+        if not self._user_id_exists(self.current_user_id):
+            self.apply_startup_flow()
+            return
         self.ui.stacked_widget_main.setCurrentWidget(self.ui.page_main)
     
     # ==================== Отображение описаний упражнений ====================
     
     def show_apple_ex_description(self):
         self.ui.stacked_widget_ex_choose.setCurrentWidget(self.ui.page_apples)
-        self.update_static_image()
         self.current_exercise = 'ex1'
         print(f"📌 Выбрано упражнение: {self.current_exercise}")
 
@@ -1326,97 +1676,163 @@ class MainWindow(QtWidgets.QMainWindow):
         elif self.current_exercise == 'ex9':
             self.open_exercise_page9()
 
-    def update_static_image(self):
-        if self.original_pixmap:
-            scaled_pixmap = self.original_pixmap.scaled(
-                self.ui.lable_apple_example_img.size(),
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation
-            )
-            self.ui.lable_apple_example_img.setPixmap(scaled_pixmap)
-
-        if self.original_pixmap_ex2:
-            scaled_pixmap_ex2 = self.original_pixmap_ex2.scaled(
-                self.ui.lable_apple_example_img_2.size(),
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation
-            )
-            self.ui.lable_apple_example_img_2.setPixmap(scaled_pixmap_ex2)
-
-        if self.original_pixmap_ex3:
-            scaled_pixmap_ex3 = self.original_pixmap_ex3.scaled(
-                self.ui.lable_apple_example_img_3.size(),
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation
-            )
-            self.ui.lable_apple_example_img_3.setPixmap(scaled_pixmap_ex3)
-        
-        # Обновление изображений для упражнений 4-9
-        if hasattr(self, 'original_pixmap_ex4') and self.original_pixmap_ex4:
-            scaled = self.original_pixmap_ex4.scaled(
-                self.ui.lable_apple_example_img_4.size(),
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation
-            )
-            self.ui.lable_apple_example_img_4.setPixmap(scaled)
-        
-        if hasattr(self, 'original_pixmap_ex5') and self.original_pixmap_ex5:
-            scaled = self.original_pixmap_ex5.scaled(
-                self.ui.lable_apple_example_img_5.size(),
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation
-            )
-            self.ui.lable_apple_example_img_5.setPixmap(scaled)
-        
-        if hasattr(self, 'original_pixmap_ex6') and self.original_pixmap_ex6:
-            scaled = self.original_pixmap_ex6.scaled(
-                self.ui.lable_apple_example_img_6.size(),
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation
-            )
-            self.ui.lable_apple_example_img_6.setPixmap(scaled)
-        
-        if hasattr(self, 'original_pixmap_ex7') and self.original_pixmap_ex7:
-            scaled = self.original_pixmap_ex7.scaled(
-                self.ui.lable_apple_example_img_7.size(),
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation
-            )
-            self.ui.lable_apple_example_img_7.setPixmap(scaled)
-        
-        if hasattr(self, 'original_pixmap_ex8') and self.original_pixmap_ex8:
-            scaled = self.original_pixmap_ex8.scaled(
-                self.ui.lable_apple_example_img_8.size(),
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation
-            )
-            self.ui.lable_apple_example_img_8.setPixmap(scaled)
-        
-        if hasattr(self, 'original_pixmap_ex9') and self.original_pixmap_ex9:
-            scaled = self.original_pixmap_ex9.scaled(
-                self.ui.lable_apple_example_img_9.size(),
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation
-            )
-            self.ui.lable_apple_example_img_9.setPixmap(scaled)
+    def _setup_example_images(self):
+        files = (
+            (self.ui.lable_apple_example_img, asset("img/eex1.png")),
+            (self.ui.lable_apple_example_img_2, asset("img/eex2.png")),
+            (self.ui.lable_apple_example_img_3, asset("img/eex3.png")),
+            (self.ui.lable_apple_example_img_4, asset("img/eex4.png")),
+            (self.ui.lable_apple_example_img_5, asset("img/eex5.png")),
+            (self.ui.lable_apple_example_img_6, asset("img/eex6.png")),
+            (self.ui.lable_apple_example_img_7, asset("img/eex7.png")),
+            (self.ui.lable_apple_example_img_8, asset("img/eex8.png")),
+            (self.ui.lable_apple_example_img_9, asset("img/eex9.png")),
+        )
+        for widget, path in files:
+            pixmap = QPixmap(path)
+            if hasattr(widget, "setSource"):
+                widget.setSource(pixmap)
+            elif not pixmap.isNull():
+                widget.setPixmap(pixmap)
+            parent = widget.parentWidget()
+            layout = parent.layout() if parent is not None else None
+            if layout is None:
+                continue
+            index = layout.indexOf(widget)
+            if index < 0:
+                continue
+            layout.setStretch(index, 1)
+            for neighbor in (index - 1, index + 1):
+                if neighbor < 0 or neighbor >= layout.count():
+                    continue
+                spacer = layout.itemAt(neighbor).spacerItem()
+                if spacer is None:
+                    continue
+                spacer.changeSize(20, 8, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
 
     def resizeEvent(self, event):
-        self.update_static_image()
+        self._adapt_layouts()
+        self._sync_backgrounds()
         super().resizeEvent(event)
+
+    def _make_window_resizable(self):
+        expanding = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
+        ignored = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored
+        )
+        for stack in (
+            self.ui.stacked_widget_main,
+            self.ui.stacked_widget_ex_choose,
+        ):
+            if stack is None:
+                continue
+            stack.setSizePolicy(expanding)
+            for index in range(stack.count()):
+                page = stack.widget(index)
+                if page is not None:
+                    page.setSizePolicy(ignored)
+        self.setMinimumSize(860, 540)
+        self._main_cards_compact = None
+        self.ui.listWidget_startup_users.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
+        self.ui.verticalLayout_startup_select.setStretch(1, 1)
+        self.ui.btn_startup_continue.setSizePolicy(
+            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
+        )
+        self.ui.btn_startup_new_user.setSizePolicy(
+            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
+        )
+
+    def _adapt_layouts(self):
+        self._adapt_history_layout()
+        self._adapt_settings_layout()
+        self._adapt_main_cards()
+
+    def _adapt_settings_layout(self):
+        cols = getattr(self.ui, "horizontalLayout_settings_cols", None)
+        if cols is None:
+            return
+        cols.setDirection(
+            QtWidgets.QBoxLayout.LeftToRight
+            if self.width() >= 980
+            else QtWidgets.QBoxLayout.TopToBottom
+        )
+
+    def _adapt_main_cards(self):
+        grid = getattr(self.ui, "gridLayout", None)
+        if grid is None:
+            return
+        compact = self.width() < 1000
+        if getattr(self, "_main_cards_compact", None) == compact:
+            return
+        self._main_cards_compact = compact
+        cards = (
+            self.ui.card_train_btn,
+            self.ui.card_history_btn,
+            self.ui.card_settings_btn,
+            self.ui.card_exit_btn,
+        )
+        for card in cards:
+            grid.removeWidget(card)
+        if compact:
+            grid.addWidget(self.ui.card_train_btn, 0, 1)
+            grid.addWidget(self.ui.card_history_btn, 0, 2)
+            grid.addWidget(self.ui.card_settings_btn, 1, 1)
+            grid.addWidget(self.ui.card_exit_btn, 1, 2)
+        else:
+            grid.addWidget(self.ui.card_train_btn, 0, 1)
+            grid.addWidget(self.ui.card_history_btn, 0, 2)
+            grid.addWidget(self.ui.card_settings_btn, 0, 3)
+            grid.addWidget(self.ui.card_exit_btn, 0, 4)
+
+    def _sync_backgrounds(self):
+        self.ui.widget_bg_waves.sync_to_parent()
+        self.ui.widget_bg_points.sync_to_parent()
+        if self.ui.stacked_widget_main.currentWidget() is self.ui.page_ex:
+            self.ui.stacked_widget_main.raise_()
+            self.ui.btn_back_video.raise_()
+
+    def _sync_training_chrome(self, *_args):
+        training = self.ui.stacked_widget_main.currentWidget() is self.ui.page_ex
+        self.ui.widget_bg_waves.setVisible(not training)
+        self.ui.widget_bg_points.setVisible(not training)
+        self.ui.stacked_widget_main.raise_()
+        if training:
+            self.ui.btn_back_video.raise_()
+
+    def _adapt_history_layout(self):
+        charts = getattr(self.ui, "horizontalLayout_history_charts", None)
+        if charts is not None:
+            charts.setDirection(
+                QtWidgets.QBoxLayout.LeftToRight
+                if self.width() >= 1100
+                else QtWidgets.QBoxLayout.TopToBottom
+            )
 
     def update_frame(self, frame):
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         h, w, ch = frame_rgb.shape
         q_image = QImage(frame_rgb.data, w, h, ch * w, QImage.Format_RGB888)
         pixmap = QPixmap.fromImage(q_image)
-        scaled_pixmap = pixmap.scaled(
-            self.ui.label_video.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
-        )
-        self.ui.label_video.setPixmap(scaled_pixmap)
-        self.ui.label_video.setAlignment(Qt.AlignCenter)
+        target = self.ui.label_video.size()
+        if target.width() < 2 or target.height() < 2:
+            return
+        scaled = pixmap.scaled(target, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        canvas = QPixmap(target)
+        canvas.fill(QtGui.QColor("#111111"))
+        painter = QtGui.QPainter(canvas)
+        x = (target.width() - scaled.width()) // 2
+        y = (target.height() - scaled.height()) // 2
+        painter.drawPixmap(x, y, scaled)
+        painter.end()
+        self.ui.label_video.setPixmap(canvas)
 
     def closeEvent(self, event):
         """Закрытие соединения с БД при выходе"""
+        self._stop_settings_preview()
         if self.db:
             self.db.close()
         event.accept()
@@ -1426,151 +1842,218 @@ class MainWindow(QtWidgets.QMainWindow):
             self.thread.stop()
             self.thread.wait()
         self.open_page_choose_ex()
-        self.current_exercise = None
-        self.ui.stacked_widget_ex_choose.setCurrentWidget(self.ui.page_emty)
 
     def open_history_page(self):
         """Открытие страницы истории тренировок"""
         self.ui.stacked_widget_main.setCurrentWidget(self.ui.page)
+        self._adapt_history_layout()
         self.load_history()
-    
+
+    @staticmethod
+    def _history_success(record):
+        total = record.get("total_apples") or 0
+        caught = record.get("caught_apples") or 0
+        if total <= 0:
+            return 0.0
+        return caught / total * 100.0
+
+    @staticmethod
+    def _history_date(record):
+        value = record.get("exercise_date")
+        if isinstance(value, datetime):
+            return value
+        if isinstance(value, str):
+            for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M:%S.%f", "%d.%m.%Y %H:%M"):
+                try:
+                    return datetime.strptime(value, fmt)
+                except ValueError:
+                    continue
+        return None
+
+    def _filtered_history(self, records, *, exercise=True, period=True):
+        result = list(records)
+        if exercise:
+            exercise_id = self.ui.combo_history_exercise.currentData()
+            if exercise_id:
+                result = [row for row in result if int(row.get("exercise_id") or 0) == int(exercise_id)]
+        if period:
+            start, end = getattr(self, "_history_period", (None, None))
+            if start is not None and end is not None:
+                start_dt = datetime(start.year(), start.month(), start.day())
+                end_dt = datetime(end.year(), end.month(), end.day(), 23, 59, 59)
+                filtered = []
+                for row in result:
+                    moment = self._history_date(row)
+                    if moment is None or start_dt <= moment <= end_dt:
+                        filtered.append(row)
+                result = filtered
+        return result
+
+    def _open_history_period(self):
+        start, end = self._history_period
+        self._history_period_popup.show_for(self.ui.btn_history_period, start, end)
+
+    def _on_history_period_changed(self, start, end):
+        self._history_period = (start, end)
+        self._update_history_period_button()
+        self._refresh_history_view()
+
+    def _update_history_period_button(self):
+        start, end = self._history_period
+        if start is not None and end is not None:
+            if start == end:
+                text = start.toString("dd.MM.yyyy")
+            else:
+                text = f"{start.toString('dd.MM.yyyy')} — {end.toString('dd.MM.yyyy')}"
+        else:
+            text = "Всё время"
+        self.ui.btn_history_period.setText(text)
+
+    def _refresh_history_view(self):
+        records = getattr(self, "_history_records", [])
+        view_records = self._filtered_history(records, exercise=True, period=True)
+        bar_records = self._filtered_history(records, exercise=False, period=True)
+
+        line_points = []
+        chronological = list(reversed(view_records))[-30:]
+        for row in chronological:
+            moment = self._history_date(row)
+            label = moment.strftime("%d.%m") if moment else ""
+            line_points.append((label, self._history_success(row)))
+        self.ui.chart_history_success.set_points(line_points)
+
+        averages = {}
+        counts = {}
+        for row in bar_records:
+            name = row.get("exercise_type") or "Упражнение"
+            averages[name] = averages.get(name, 0.0) + self._history_success(row)
+            counts[name] = counts.get(name, 0) + 1
+        bars = []
+        for number in range(1, 10):
+            name = f"Упражнение {number}"
+            if counts.get(name):
+                bars.append((f"Упр. {number}", averages[name] / counts[name]))
+        self.ui.chart_history_exercises.set_bars(bars)
+        self._fill_history_table(self._sort_history_records(view_records))
+
+    def _history_sort_key(self, record):
+        column = self._history_sort_column
+        if column == 0:
+            return self._history_date(record) or datetime.min
+        if column == 1:
+            return (int(record.get("exercise_id") or 0), record.get("exercise_type") or "")
+        if column == 2:
+            return int(record.get("caught_apples") or 0)
+        if column == 3:
+            return self._history_success(record)
+        if column == 4:
+            return str(record.get("background") or "")
+        if column == 5:
+            return float(record.get("total_score") or 0)
+        return 0
+
+    def _sort_history_records(self, records):
+        if self._history_sort_column is None:
+            return list(records)
+        return sorted(
+            records,
+            key=self._history_sort_key,
+            reverse=bool(self._history_sort_desc),
+        )
+
+    def _on_history_header_clicked(self, column):
+        if self._history_sort_column == column:
+            self._history_sort_desc = not self._history_sort_desc
+        else:
+            self._history_sort_column = column
+            self._history_sort_desc = True
+        header = self.ui.tableWidget.horizontalHeader()
+        header.setSortIndicatorShown(True)
+        header.setSortIndicator(
+            column,
+            Qt.DescendingOrder if self._history_sort_desc else Qt.AscendingOrder,
+        )
+        self._refresh_history_view()
+
+    def _fill_history_table(self, records):
+        table = self.ui.tableWidget
+        table.clearSpans()
+        if not records:
+            table.setRowCount(1)
+            empty = QtWidgets.QTableWidgetItem("Нет данных за выбранный период")
+            empty.setTextAlignment(Qt.AlignCenter)
+            table.setItem(0, 0, empty)
+            table.setSpan(0, 0, 1, table.columnCount())
+            return
+
+        table.setRowCount(len(records))
+        for row, record in enumerate(records):
+            moment = self._history_date(record)
+            date_str = moment.strftime("%d.%m.%Y %H:%M") if moment else "Н/Д"
+            total = record.get("total_apples") or 0
+            caught = record.get("caught_apples") or 0
+            success = self._history_success(record)
+            values = [
+                date_str,
+                record.get("exercise_type", "Упражнение"),
+                f"{caught}/{total}",
+                f"{success:.0f}%",
+                str(record.get("background") or "—"),
+                f"{float(record.get('total_score') or 0):.0f}",
+            ]
+            for column, text in enumerate(values):
+                item = QtWidgets.QTableWidgetItem(text)
+                item.setTextAlignment(Qt.AlignCenter)
+                if column == 3:
+                    if success >= 80:
+                        item.setBackground(QtGui.QColor(232, 248, 247))
+                    elif success < 50:
+                        item.setBackground(QtGui.QColor(253, 244, 244))
+                table.setItem(row, column, item)
+            table.setRowHeight(row, 40)
+
     def load_history(self):
         """Загрузка истории тренировок для текущего пользователя из БД"""
         try:
             if self.db is None:
-                print("❌ База данных недоступна для загрузки истории")
                 QtWidgets.QMessageBox.warning(
                     self,
                     "База данных недоступна",
-                    "Не удалось подключиться к базе данных."
+                    "Не удалось подключиться к базе данных.",
                 )
                 return
-            
+
             if not self.current_user_id:
                 QtWidgets.QMessageBox.warning(
                     self,
                     "Пользователь не выбран",
-                    "Пожалуйста, выберите пользователя из списка на главной странице."
+                    "Пожалуйста, выберите пользователя из списка на главной странице.",
                 )
                 self.open_main_page()
                 return
-            
-            print("🔄 Загрузка истории тренировок...")
-            
-            self.ui.tableWidget.setRowCount(0)
-            records = self.db.get_exercise_history_by_user(self.current_user_id, limit=100)
-            
-            print(f"✅ Загружено записей истории: {len(records)}")
-            
-            if len(records) == 0:
-                self.ui.tableWidget.setRowCount(1)
-                no_data_item = QtWidgets.QTableWidgetItem("Нет данных о тренировках")
-                no_data_item.setTextAlignment(Qt.AlignCenter)
-                self.ui.tableWidget.setItem(0, 0, no_data_item)
-                self.ui.tableWidget.setSpan(0, 0, 1, self.ui.tableWidget.columnCount())
-                return
-            
-            self.ui.tableWidget.setRowCount(len(records))
-            
-            for row, record in enumerate(records):
-                exercise_type = record.get('exercise_type', 'Неизвестно')
-                self.ui.tableWidget.setItem(row, 0, QtWidgets.QTableWidgetItem(exercise_type))
-                
-                exercise_date = record.get('exercise_date')
-                if exercise_date:
-                    if hasattr(exercise_date, 'strftime'):
-                        date_str = exercise_date.strftime("%d.%m.%Y %H:%M")
-                    else:
-                        date_str = str(exercise_date)
-                else:
-                    date_str = "Н/Д"
-                date_item = QtWidgets.QTableWidgetItem(date_str)
-                date_item.setTextAlignment(Qt.AlignCenter)
-                self.ui.tableWidget.setItem(row, 1, date_item)
-                
-                total_apples = record.get('total_apples', 0)
-                total_item = QtWidgets.QTableWidgetItem(str(total_apples))
-                total_item.setTextAlignment(Qt.AlignCenter)
-                self.ui.tableWidget.setItem(row, 2, total_item)
-                
-                caught_apples = record.get('caught_apples', 0)
-                caught_item = QtWidgets.QTableWidgetItem(str(caught_apples))
-                caught_item.setTextAlignment(Qt.AlignCenter)
-                self.ui.tableWidget.setItem(row, 3, caught_item)
-                
-                if total_apples > 0:
-                    success_rate = (caught_apples / total_apples) * 100
-                    success_text = f"{success_rate:.1f}%"
-                else:
-                    success_text = "0%"
-                success_item = QtWidgets.QTableWidgetItem(success_text)
-                success_item.setTextAlignment(Qt.AlignCenter)
-                if total_apples > 0:
-                    success_rate_val = caught_apples / total_apples
-                    if success_rate_val >= 0.8:
-                        success_item.setBackground(QtGui.QColor(200, 255, 200))
-                    elif success_rate_val >= 0.5:
-                        success_item.setBackground(QtGui.QColor(255, 255, 200))
-                    else:
-                        success_item.setBackground(QtGui.QColor(255, 200, 200))
-                self.ui.tableWidget.setItem(row, 4, success_item)
-                
-                difficulty = record.get('difficulty', '')
-                difficulty_item = QtWidgets.QTableWidgetItem(str(difficulty))
-                difficulty_item.setTextAlignment(Qt.AlignCenter)
-                self.ui.tableWidget.setItem(row, 5, difficulty_item)
-                
-                background = record.get('background', '')
-                background_item = QtWidgets.QTableWidgetItem(str(background))
-                background_item.setTextAlignment(Qt.AlignCenter)
-                self.ui.tableWidget.setItem(row, 6, background_item)
-                
-                coefficient = record.get('coefficient', 0)
-                coeff_item = QtWidgets.QTableWidgetItem(f"{coefficient:.2f}")
-                coeff_item.setTextAlignment(Qt.AlignCenter)
-                if coefficient >= 1.5:
-                    coeff_item.setBackground(QtGui.QColor(200, 255, 200))
-                elif coefficient >= 1.0:
-                    coeff_item.setBackground(QtGui.QColor(255, 255, 200))
-                else:
-                    coeff_item.setBackground(QtGui.QColor(255, 200, 200))
-                self.ui.tableWidget.setItem(row, 7, coeff_item)
-                
-                total_score = record.get('total_score', 0)
-                score_item = QtWidgets.QTableWidgetItem(f"{total_score:.2f}")
-                score_item.setTextAlignment(Qt.AlignCenter)
-                max_score = total_apples * 10
-                if max_score > 0:
-                    score_percent = (total_score / max_score) * 100
-                    if score_percent >= 80:
-                        score_item.setBackground(QtGui.QColor(200, 255, 200))
-                    elif score_percent >= 50:
-                        score_item.setBackground(QtGui.QColor(255, 255, 200))
-                    else:
-                        score_item.setBackground(QtGui.QColor(255, 200, 200))
-                self.ui.tableWidget.setItem(row, 8, score_item)
-            
-            current_user_name = self.ui.comboBox_choose_user.currentText()
-            if current_user_name == "-- Выберите пользователя --":
-                current_user_name = "Не выбран"
-            self.ui.label_17.setText(f"История тренировок - {current_user_name}")
-            
+
+            self._history_records = self.db.get_exercise_history_by_user(
+                self.current_user_id, limit=300
+            )
+            self.ui.label_history_user.setText(self._current_user_name() or "Не выбран")
+            self._refresh_history_view()
         except Exception as e:
             print(f"❌ Ошибка при загрузке истории: {e}")
             traceback.print_exc()
             QtWidgets.QMessageBox.warning(
                 self,
                 "Ошибка загрузки",
-                f"Не удалось загрузить историю тренировок:\n{str(e)}"
+                f"Не удалось загрузить историю тренировок:\n{str(e)}",
             )
 
 if __name__ == "__main__":
+    import qt_bootstrap  # noqa: F401
+    setup_runtime()
     app = QtWidgets.QApplication(sys.argv)
     load_styles(app)
 
     try:
         window = MainWindow()
-        window.setWindowTitle("Тренажер вестибулярного аппарата")
         window.show()
         
         sys.exit(app.exec_())

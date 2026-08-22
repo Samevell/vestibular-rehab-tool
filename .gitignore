@@ -5,7 +5,13 @@ __pycache__/
 venv/
 env/
 .env
-db_config.json
+data/trainer.db
+data/trainer.db-wal
+data/avatars/
+build/
+dist/
+packaging/output/
+packaging/app.ico
 .idea/
 .vscode/
 *.log

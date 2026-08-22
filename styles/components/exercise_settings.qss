@@ -21,7 +21,6 @@
 }
 
 #stacked_widget_ex_choose QComboBox {
-    qproperty-alignment: AlignCenter;
     padding-left: 32px;
     padding-right: 32px;
 }

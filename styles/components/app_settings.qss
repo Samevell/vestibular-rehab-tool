@@ -1,0 +1,104 @@
+/* Настройки приложения */
+
+#btn_back_settings {
+    background: #ffffff;
+    border: none;
+    border-radius: 22px;
+    padding: 8px 18px;
+    color: #2C3E50;
+}
+
+#btn_back_settings:hover {
+    background: #F3FBFA;
+}
+
+#card_app_settings {
+    background: transparent;
+}
+
+#label_settings_title,
+#label_settings_screen,
+#label_settings_camera,
+#label_settings_train,
+#label_preview_caption,
+#label_camera,
+#label_volume,
+#label_volume_value,
+#label_audio_output {
+    background: transparent;
+    color: #2C3E50;
+}
+
+#label_settings_screen,
+#label_settings_camera,
+#label_settings_train,
+#label_preview_caption {
+    padding-top: 8px;
+}
+
+#page_settings QCheckBox {
+    background: transparent;
+    spacing: 10px;
+    color: #2C3E50;
+}
+
+#page_settings QCheckBox::indicator {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 1px solid #D5DEE6;
+    background: #ffffff;
+}
+
+#page_settings QCheckBox::indicator:checked {
+    background: #1dbeb7;
+    border: 1px solid #1dbeb7;
+}
+
+#page_settings QComboBox {
+    background: #F7FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 4px 10px;
+    min-height: 32px;
+}
+
+#page_settings QComboBox:hover,
+#page_settings QComboBox:focus {
+    border: 1px solid #1dbeb7;
+    background: #ffffff;
+}
+
+#page_settings QComboBox::drop-down {
+    border: none;
+    width: 24px;
+}
+
+#slider_volume {
+    min-height: 24px;
+}
+
+#slider_volume::groove:horizontal {
+    height: 6px;
+    background: #E2E8F0;
+    border-radius: 3px;
+}
+
+#slider_volume::handle:horizontal {
+    width: 18px;
+    height: 18px;
+    margin: -6px 0;
+    border-radius: 9px;
+    background: #1dbeb7;
+}
+
+#slider_volume::sub-page:horizontal {
+    background: #1dbeb7;
+    border-radius: 3px;
+}
+
+#label_camera_preview {
+    background: #111827;
+    color: #9CA3AF;
+    border-radius: 16px;
+}

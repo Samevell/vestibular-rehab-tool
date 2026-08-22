@@ -26,6 +26,13 @@ def _parse_date(value) -> Optional[datetime]:
         return None
     if isinstance(value, datetime):
         return value
+    if isinstance(value, str):
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M:%S.%f"):
+            try:
+                return datetime.strptime(value, fmt)
+            except ValueError:
+                continue
+        return None
     if hasattr(value, "year"):
         return datetime(value.year, value.month, value.day)
     return None

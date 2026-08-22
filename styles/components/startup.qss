@@ -1,0 +1,88 @@
+/* Стартовый экран выбора / создания пациента */
+
+#card_startup {
+    background: transparent;
+}
+
+#stacked_startup,
+#page_startup_select,
+#page_startup_create {
+    background: transparent;
+}
+
+#label_startup_select_title,
+#label_startup_create_title {
+    color: #2C3E50;
+    background: transparent;
+}
+
+#label_startup_create_hint {
+    color: #8A97A6;
+    background: transparent;
+    padding-bottom: 8px;
+}
+
+#label_startup_first_name,
+#label_startup_last_name {
+    color: #5B6B7A;
+    background: transparent;
+}
+
+#listWidget_startup_users {
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 4px 0;
+}
+
+#listWidget_startup_users::item {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+#listWidget_startup_users::item:selected,
+#listWidget_startup_users::item:hover {
+    background: transparent;
+}
+
+#btn_startup_continue,
+#btn_startup_create {
+    background: #1dbeb7;
+    border: none;
+    color: white;
+    border-radius: 14px;
+    font-weight: 600;
+}
+
+#btn_startup_continue:hover,
+#btn_startup_create:hover {
+    background: #18ada6;
+}
+
+#btn_startup_new_user,
+#btn_startup_back_to_select {
+    background: #ffffff;
+    border: 1px solid #D5DEE6;
+    color: #2C3E50;
+    border-radius: 14px;
+}
+
+#btn_startup_new_user:hover,
+#btn_startup_back_to_select:hover {
+    background: #F3FBFA;
+    border: 1px solid #1dbeb7;
+}
+
+#page_startup QLineEdit {
+    background: #F7FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 8px 14px;
+}
+
+#page_startup QLineEdit:focus {
+    background: #ffffff;
+    border: 1px solid #1dbeb7;
+}

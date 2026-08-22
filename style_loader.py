@@ -1,24 +1,27 @@
 """Единая загрузка QSS для приложения."""
-import os
+from pathlib import Path
 
-# Корень проекта (рядом с main.py)
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+from app_paths import project_root
 
 STYLE_FILES = [
     "styles/base.qss",
     "styles/components/exercise_settings.qss",
+    "styles/components/startup.qss",
+    "styles/components/user_profile.qss",
+    "styles/components/app_settings.qss",
+    "styles/components/history.qss",
+    "styles/components/training.qss",
 ]
 
 
 def load_styles(app, root_dir=None):
-    root = root_dir or ROOT_DIR
+    root = Path(root_dir) if root_dir else project_root()
     style = ""
     for rel_path in STYLE_FILES:
-        path = os.path.join(root, rel_path)
-        if not os.path.isfile(path):
+        path = root / rel_path
+        if not path.is_file():
             continue
-        with open(path, "r", encoding="utf-8") as f:
-            style += f.read() + "\n"
+        style += path.read_text(encoding="utf-8") + "\n"
     if style:
         app.setStyleSheet(style)
     return style

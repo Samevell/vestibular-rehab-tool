@@ -1,11 +1,12 @@
 # detect_thread.py
 from PyQt5.QtCore import QThread, pyqtSignal
 import cv2
+from app_paths import asset
+from app_settings import open_camera, maybe_mirror, overlay_pose, filter_pause
 import mediapipe as mp
 import numpy as np
 import time
 import imageio
-import random
 from calibration import (
     Calibrator,
     catch_ok,
@@ -24,21 +25,21 @@ mp_hands = mp.solutions.hands  # Добавляем распознавание �
 mp_drawing = mp.solutions.drawing_utils
 
 # Загрузка текстуры яблока
-apple_texture = cv2.imread('./img/apple.png', cv2.IMREAD_UNCHANGED)
+apple_texture = cv2.imread(asset("img/apple.png"), cv2.IMREAD_UNCHANGED)
 if apple_texture is None:
     print("Ошибка: не удалось загрузить изображение.")
-    exit()
+    apple_texture = np.zeros((60, 60, 4), dtype=np.uint8)
 
 # Загрузка анимаций
-rain_gif = imageio.mimread('./img/rain.gif')
+rain_gif = imageio.mimread(asset("img/rain.gif"))
 rain_frames = [cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) for frame in rain_gif]
 rain_frame_count = len(rain_frames)
 
-fog_gif = imageio.mimread('./img/fog.gif')
+fog_gif = imageio.mimread(asset("img/fog.gif"))
 fog_frames = [cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) for frame in fog_gif]
 fog_frame_count = len(fog_frames)
 
-snow_gif = imageio.mimread('./img/snow.gif')
+snow_gif = imageio.mimread(asset("img/snow.gif"))
 snow_frames = [cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) for frame in snow_gif]
 snow_frame_count = len(snow_frames)
 
@@ -118,7 +119,7 @@ class CameraThread2(QThread):
     def run(self):
         pose = mp_pose.Pose()
         hands = mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5)  # Инициализируем распознавание рук
-        cap = cv2.VideoCapture(0)
+        cap = open_camera()
 
         if not cap.isOpened():
             print("Камера не обнаружена.")
@@ -130,7 +131,7 @@ class CameraThread2(QThread):
                 print("Не удалось получить кадр.")
                 break
 
-            frame = cv2.flip(frame, 1)
+            frame = maybe_mirror(frame)
             image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             # Обработка фона в зависимости от выбора
@@ -160,6 +161,7 @@ class CameraThread2(QThread):
             results_hands = hands.process(image_rgb)
 
             landmarks = results_pose.pose_landmarks
+            overlay_pose(frame, landmarks)
 
             if not self.calibrated:
                 calib = self.calibrator.tick(frame, landmarks)
@@ -171,7 +173,7 @@ class CameraThread2(QThread):
                     print_profile_summary(self.profile)
                 continue
 
-            pause_msg = check_runtime(self.profile, landmarks, frame.shape[1], frame.shape[0])
+            pause_msg = filter_pause(check_runtime(self.profile, landmarks, frame.shape[1], frame.shape[0]))
             if pause_msg:
                 cv2.putText(frame, pause_msg, (20, frame.shape[0] // 2), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 220, 255), 2)
                 self.frame_signal.emit(frame)

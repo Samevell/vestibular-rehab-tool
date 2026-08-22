@@ -1,0 +1,91 @@
+/* Настройки пациента */
+
+#btn_user_profile_back {
+    background: #ffffff;
+    border: none;
+    border-radius: 22px;
+    padding: 8px 18px;
+    color: #2C3E50;
+}
+
+#btn_user_profile_back:hover {
+    background: #F3FBFA;
+}
+
+#card_user_profile {
+    background: transparent;
+}
+
+#label_user_profile_title,
+#label_profile_first,
+#label_profile_last {
+    background: transparent;
+    color: #2C3E50;
+}
+
+#label_profile_first,
+#label_profile_last {
+    color: #5B6B7A;
+}
+
+#page_user_profile QLineEdit {
+    background: #F7FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 8px 14px;
+}
+
+#page_user_profile QLineEdit:focus {
+    background: #ffffff;
+    border: 1px solid #1dbeb7;
+}
+
+#btn_choose_avatar,
+#btn_capture_avatar {
+    background: #ffffff;
+    border: 1px solid #D5DEE6;
+    color: #2C3E50;
+    border-radius: 12px;
+}
+
+#btn_choose_avatar:hover,
+#btn_capture_avatar:hover {
+    background: #F3FBFA;
+    border: 1px solid #1dbeb7;
+}
+
+#btn_save_profile {
+    background: #1dbeb7;
+    border: none;
+    color: white;
+    border-radius: 14px;
+    font-weight: 600;
+}
+
+#btn_save_profile:hover {
+    background: #18ada6;
+}
+
+#btn_switch_user {
+    background: #ffffff;
+    border: 1px solid #D5DEE6;
+    color: #2C3E50;
+    border-radius: 14px;
+}
+
+#btn_switch_user:hover {
+    background: #F3FBFA;
+    border: 1px solid #1dbeb7;
+}
+
+#btn_delete_profile {
+    background: #ffffff;
+    border: 1px solid #E7B8B8;
+    color: #C45C5C;
+    border-radius: 14px;
+}
+
+#btn_delete_profile:hover {
+    background: #FDF4F4;
+    border: 1px solid #C45C5C;
+}

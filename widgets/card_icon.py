@@ -3,6 +3,8 @@ from PyQt5.QtSvg import QSvgRenderer
 from PyQt5.QtGui import QImage, QPainter, QColor
 from PyQt5.QtCore import QPointF, QRectF, pyqtProperty, Qt
 
+from app_paths import resolve_asset
+
 
 class CardIcon(QLabel):
     def __init__(self, parent=None):
@@ -36,7 +38,8 @@ class CardIcon(QLabel):
 
     def setSvgFile(self, path):
         self._svg_file = path
-        self._renderer = QSvgRenderer(path) if path else None
+        resolved = resolve_asset(path) if path else ""
+        self._renderer = QSvgRenderer(resolved) if resolved else None
         self.update()
 
     svg_file = pyqtProperty(str, fget=getSvgFile, fset=setSvgFile)

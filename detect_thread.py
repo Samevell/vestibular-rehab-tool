@@ -1,6 +1,8 @@
 # detect_thread.py
 from PyQt5.QtCore import QThread, pyqtSignal
 import cv2
+from app_paths import asset
+from app_settings import open_camera, maybe_mirror, overlay_pose, filter_pause
 import mediapipe as mp
 import numpy as np
 import time
@@ -24,22 +26,25 @@ from cv_text import put_text_ru
 mp_pose = mp.solutions.pose
 mp_hands = mp.solutions.hands
 
-apple_texture = cv2.imread('./img/apple.png', cv2.IMREAD_UNCHANGED)
-exclamation_texture = cv2.imread('./img/znak.png', cv2.IMREAD_UNCHANGED)
+apple_texture = cv2.imread(asset("img/apple.png"), cv2.IMREAD_UNCHANGED)
+exclamation_texture = cv2.imread(asset("img/znak.png"), cv2.IMREAD_UNCHANGED)
 
-if apple_texture is None or exclamation_texture is None:
-    print("Ошибка: не удалось загрузить изображение.")
-    exit()
+if apple_texture is None:
+    print("Ошибка: не удалось загрузить img/apple.png")
+    apple_texture = np.zeros((60, 60, 4), dtype=np.uint8)
+if exclamation_texture is None:
+    print("Ошибка: не удалось загрузить img/znak.png")
+    exclamation_texture = np.zeros((60, 60, 4), dtype=np.uint8)
 
-rain_gif = imageio.mimread('./img/rain.gif')
+rain_gif = imageio.mimread(asset("img/rain.gif"))
 rain_frames = [cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) for frame in rain_gif]
 rain_frame_count = len(rain_frames)
 
-fog_gif = imageio.mimread('./img/fog.gif')
+fog_gif = imageio.mimread(asset("img/fog.gif"))
 fog_frames = [cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) for frame in fog_gif]
 fog_frame_count = len(fog_frames)
 
-snow_gif = imageio.mimread('./img/snow.gif')
+snow_gif = imageio.mimread(asset("img/snow.gif"))
 snow_frames = [cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) for frame in snow_gif]
 snow_frame_count = len(snow_frames)
 
@@ -113,7 +118,7 @@ class CameraThread(QThread):
         pose = mp_pose.Pose()
         hands = mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
-        cap = cv2.VideoCapture(0)
+        cap = open_camera()
         if not cap.isOpened():
             print("Камера не обнаружена.")
             return
@@ -132,13 +137,14 @@ class CameraThread(QThread):
                 print("Не удалось получить кадр.")
                 break
 
-            frame = cv2.flip(frame, 1)
+            frame = maybe_mirror(frame)
             h, w, _ = frame.shape
             image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             results_pose = pose.process(image_rgb)
             results_hands = hands.process(image_rgb)
             landmarks = results_pose.pose_landmarks
+            overlay_pose(frame, landmarks)
 
             if not self.calibrated:
                 calib = self.calibrator.tick(frame, landmarks)
@@ -154,12 +160,12 @@ class CameraThread(QThread):
                         self.sound_manager.play_loop()
                 continue
 
-            pause_msg = check_runtime(
+            pause_msg = filter_pause(check_runtime(
                 self.profile,
                 landmarks,
                 w,
                 h,
-            )
+            ))
             if pause_msg:
                 pause_message = pause_msg
                 out = frame.copy()

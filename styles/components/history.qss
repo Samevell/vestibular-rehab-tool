@@ -1,0 +1,86 @@
+/* История тренировок */
+
+#page {
+    background: transparent;
+    font-size: 15px;
+}
+
+#pushButton_3 {
+    background: #ffffff;
+    border: none;
+    border-radius: 22px;
+    padding: 8px 18px;
+    color: #2C3E50;
+    font-size: 15px;
+}
+
+#pushButton_3:hover {
+    background: #F3FBFA;
+}
+
+#label_17 {
+    background: transparent;
+    color: #2C3E50;
+    font-size: 22px;
+}
+
+#label_history_user {
+    background: transparent;
+    color: #52c4b9;
+    font-size: 18px;
+}
+
+#label_history_exercise,
+#label_history_period {
+    background: transparent;
+    color: #8A97A6;
+    font-size: 15px;
+}
+
+#page QComboBox,
+#btn_history_period {
+    background: #F7FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 4px 12px;
+    min-height: 36px;
+    color: #2C3E50;
+    font-size: 15px;
+}
+
+#page QComboBox:hover,
+#page QComboBox:focus,
+#btn_history_period:hover {
+    border: 1px solid #1dbeb7;
+    background: #ffffff;
+}
+
+#tableWidget {
+    background: transparent;
+    border: none;
+    gridline-color: #EEF2F5;
+    alternate-background-color: #F8FBFC;
+    selection-background-color: #E8F8F7;
+    selection-color: #2C3E50;
+    font-size: 15px;
+}
+
+#tableWidget::item {
+    padding: 8px 6px;
+}
+
+#tableWidget QHeaderView::section {
+    background-color: #1dbeb7;
+    color: white;
+    padding: 10px 8px;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+#tableWidget QHeaderView::down-arrow,
+#tableWidget QHeaderView::up-arrow {
+    width: 10px;
+    height: 10px;
+    margin-left: 4px;
+}

@@ -22,6 +22,15 @@ QPushButton {
     color: white;
 }
 
+#btn_current_user {
+    background: transparent;
+}
+
+#label_current_user {
+    color: #52c4b9;
+    padding-right: 4px;
+}
+
 
 QScrollArea {
     border: none;

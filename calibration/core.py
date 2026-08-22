@@ -18,6 +18,7 @@ import mediapipe as mp
 import numpy as np
 
 from cv_text import put_text_ru
+from app_paths import profiles_dir
 
 mp_pose = mp.solutions.pose
 
@@ -44,8 +45,6 @@ MIN_AXIS_REACH = 35           # мин. зафиксированный разм�
 RUNTIME_DIST_PAUSE = 0.40
 RUNTIME_PAUSE_SEC = 2.0
 SPAWN_MARGIN = 0.12
-
-_PROFILES_DIR = Path(__file__).resolve().parent.parent / "calibration_profiles"
 
 
 @dataclass
@@ -169,8 +168,9 @@ def _head_metrics(landmarks, w: int, h: int) -> Optional[dict[str, float]]:
 
 
 def profile_path(user_id: int) -> Path:
-    _PROFILES_DIR.mkdir(parents=True, exist_ok=True)
-    return _PROFILES_DIR / f"user_{user_id}.json"
+    folder = profiles_dir()
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder / f"user_{user_id}.json"
 
 
 def load_profile(user_id: int) -> Optional[Profile]:
@@ -314,7 +314,7 @@ def _draw_skip_previous_button(
             "наведите руку и удержите 3 сек",
             x1 + bw // 2 - 118,
             y1 + 32,
-            font_size=14,
+            font_size=17,
             color=(175, 190, 210),
         )
     return x1, y1, x2, y2
